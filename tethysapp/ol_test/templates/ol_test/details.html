@@ -1,0 +1,126 @@
+{% extends "ol_test/base.html" %}
+{% load tethys_gizmos %}
+
+{% load static %}
+
+{% block import_gizmos %}
+  {% import_gizmo_dependency plotly_view %}
+{% endblock %}
+
+{% block header_buttons %}
+  <div class="header-button glyphicon-button"  onClick="location.href = '/apps/ol-test/'">
+    <a><span class="glyphicon glyphicon glyphicon-arrow-left"></span><span class="button-text"> Back</span></a>
+  </div>
+{% endblock %}
+
+{% block app_content %}
+    <head>
+        <!-- Tab links -->
+        <div class="tab">
+            <button class="tablinks" id="location">Location</button>
+            <button class="tablinks" id="size">Size</button>
+            <button class="tablinks" id="misc">Misc</button>
+            <button class="tablinks" id="graph-normal">Full Graph</button>
+            <button class="tablinks" id="graph-yearly">Yearly Average Graph</button>
+            <button class="tablinks" id="graph-monthly">Monthly Average Graph</button>
+            <button class="tablinks" id="graph-daily">Daily Average Graph</button>
+            {% comment %} <button class="tablinks" id="pdf">View PDF</button> {% endcomment %}
+            <button class="btn btn-info btn-download" id="download-pdf-btn">
+                <span class="glyphicon glyphicon-floppy-save"></span><span id="pdf-btn-text" class="button-text"> Save .pdf</span>
+            </button>
+            <button class="btn btn-info btn-download" id="download-csv-btn">
+                <span class="glyphicon glyphicon-floppy-save"></span><span id="csv-btn-text" class="button-text"> Save .csv</span>
+            </button>
+        </div>
+    </head>
+    <body>
+
+        <!-- Tab content -->
+        <div id="location-content" class="tabcontent table-content">
+            <table class="center">
+                <tr>
+                    {% for item, trash in location_set %}
+                        <th>{{ item }}</th>
+                    {% endfor %}
+                </tr>
+                <tr>
+                    {% for trash, item in location_set %}
+                        <td id="location-set-{{trash}}">{{ item }}</td>
+                    {% endfor %}
+                </tr>
+            </table>
+            {% comment %} <div id="map" class="map"></div> {% endcomment %}
+
+        </div>
+
+        <div id="size-content" class="tabcontent table-content">
+            <table class="center">
+                <tr>
+                    {% for item, trash in size_set %}
+                        <th>{{ item }}</th>
+                    {% endfor %}
+                </tr>
+                <tr>
+                    {% for trash, item in size_set %}
+                        <td>{{ item }}</td>
+                    {% endfor %}
+                </tr>
+            </table>
+        </div>
+
+        <div id="misc-content" class="tabcontent table-content">
+            <table class="center">
+                <tr>
+                    {% for item, trash in misc_set %}
+                        <th>{{ item }}</th>
+                    {% endfor %}
+                </tr>
+                <tr>
+                    {% for trash, item in misc_set %}
+                        <td>{{ item }}</td>
+                    {% endfor %}
+                </tr>
+            </table>
+        </div>
+
+        <div id="graph-normal-content" class="tabcontent graphcontent">
+            <div id="normal-loader">Loading...</div>
+            <div id="graph-normal-plot"></div>
+        </div>
+
+        <div id="graph-yearly-content" class="tabcontent graphcontent">
+            <div id="yearly-loader">Loading...</div>
+            <div id="graph-yearly-plot"></div>
+        </div>
+
+        <div id="graph-monthly-content" class="tabcontent graphcontent">
+            <div id="monthly-loader">Loading...</div>
+            <div id="graph-monthly-plot"></div>
+        </div>
+
+        <div id="graph-daily-content" class="tabcontent graphcontent">
+            <div id="daily-loader">Loading...</div>
+            <div id="graph-daily-plot"></div>
+        </div>
+
+        {% comment %} <div id="pdf-content" class="tabcontent pdf-tab-content">
+                <h1>Preview: </h1>
+                <div id="pdf-loader">Loading...</div>
+                <div id="pdf-container"></div>
+        </div> {% endcomment %}
+        <div id="map" class="map"></div>
+
+    </body>
+{% endblock %}
+
+{% block content_dependent_styles %}
+    {{ block.super }}
+    <link href="{% static 'ol_test/css/OL.css' %}" rel="stylesheet"/>
+    <link href="{% static 'ol_test/css/details.css' %}" rel="stylesheet"></link>
+{% endblock %}
+
+{% block scripts %}
+    {{ block.super }}
+    <script src="{% static 'ol_test/js/OL.js' %}" type="text/javascript"></script>
+    <script src="{% static 'ol_test/js/details.js' %}" type="text/javascript"></script>
+{% endblock %}

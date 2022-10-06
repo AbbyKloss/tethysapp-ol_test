@@ -1,0 +1,110 @@
+#map {
+    height:100%;
+    width: 100%;
+    position:relative;
+}
+
+.popover {
+    max-width: none;
+    max-height: none;
+}
+
+#inner-app-content {
+    padding: 0;
+}
+
+#app-content, #inner-app-content, #map_view_outer_container {
+    height: 100%;
+}
+
+input {
+    max-width: 300px;
+    margin-left: 15px;
+    float: left;
+}
+
+input[type=range] {
+    width: 30%;
+}
+
+.popup-button {
+    float: right;
+    /* transform: translateY(-4px); */ /* Static method of accomplishing centering */
+    transform: translateY(-12%); /* More adjustable method */
+}
+
+.popup-selector {
+    float: right;
+    transform: translateY(-3%);
+    margin-right: 8px;
+}
+
+.popup-content-button {
+    /* transform: translateY(12%); */
+    /* padding-right: 5px; */
+    margin: 5px;
+    text-align: center;
+
+}
+
+.popover-title {
+    height: 50px;
+    font-size: 150%;
+    margin-top: auto;
+    margin-bottom: auto;
+    padding: 11px 10px;
+}
+
+.popover-content {
+    min-height: 0px;
+    max-height: 400px;
+    min-width: 200px;
+    max-width: 828px;
+    overflow-y: hidden;
+    text-align: center;
+}
+
+#plot-content {
+    width: 800px;
+    height: 380px;
+    padding: 0;
+    margin-left: auto;
+    margin-right: auto;
+    overflow-y: visible;
+}
+
+#popup-header {
+    text-align: center;
+}
+
+#graph-plot-content {
+    justify-content: center;
+    height: 100%;
+}
+
+.popover-multi-content {
+    width: 100%;
+    height: 25px;
+    margin-left: auto;
+    margin-right: auto;
+    overflow-y: visible;
+    display: inline-block;
+    /* text-align: center; */
+}
+
+#background-select{
+    top: 10px;
+    left: 3em;
+    background:#000;
+}
+
+.modal-lg {
+    width: 80%;
+}
+
+#graph-modal-body::after {
+    content: "";
+    clear:both;
+    display:table;
+}
+

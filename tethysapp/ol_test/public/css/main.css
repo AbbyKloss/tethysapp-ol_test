@@ -1,0 +1,11 @@
+.header-button, .glyphicon-button {
+    cursor:pointer;
+}
+
+.button-text {
+    font-family: Helvetica, "Trebuchet MS", Verdana, sans-serif;
+}
+
+.button-text, .glyphicon, .title-name {
+    color: black;
+}

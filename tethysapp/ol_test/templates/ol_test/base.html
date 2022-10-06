@@ -1,0 +1,44 @@
+{% extends "tethys_apps/app_base.html" %}
+
+{% load static %}
+
+{% block title %}{{ tethys_app.name }}{% endblock %}
+
+{% block app_icon %}
+  <span>&nbsp;</span>
+  {# The path you provided in your app.py is accessible through the tethys_app.icon context variable #}
+  <img src="{% if 'http' in tethys_app.icon %}{{ tethys_app.icon }}{% else %}{% static tethys_app.icon %}{% endif %}" />
+{% endblock %}
+
+{# The name you provided in your app.py is accessible through the tethys_app.name context variable #}
+{% block app_title %}<div class="title-name">{{ tethys_app.name }}</div>{% endblock %}
+
+{% block app_navigation_override %}
+{% endblock %}
+
+{% block exit_button_override %}
+  <div class="header-button exit-button">
+    <a href="javascript:void(0);" onclick="TETHYS_APP_BASE.exit_app('/apps/');" data-toggle="tooltip" data-placement="bottom" title="" data-original-title="Exit">
+      <span class="button-text">x</span>
+    </a>
+  </div>
+{% endblock %}
+
+{% block app_content %}
+{% endblock %}
+
+{% block app_actions %}
+{% endblock %}
+
+{% block content_dependent_styles %}
+  {{ block.super }}
+  <link href="{% static 'ol_test/css/OL.css' %}" rel="stylesheet"/>
+  <link href="{% static 'ol_test/css/main.css' %}" rel="stylesheet"/>
+  <link href="{% static 'ol_test/css/map.css' %}" rel="stylesheet"/>
+{% endblock %}
+
+{% block scripts %}
+  {{ block.super }}
+  <script src="{% static 'ol_test/js/OL.js' %}" type="text/javascript"></script>
+  <script src="{% static 'ol_test/js/main.js' %}" type="text/javascript"></script>
+{% endblock %}

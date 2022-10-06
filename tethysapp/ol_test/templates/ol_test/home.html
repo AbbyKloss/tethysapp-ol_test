@@ -1,0 +1,145 @@
+{% extends "ol_test/base.html" %}
+{% load tethys_gizmos %}
+
+{% load static %}
+
+{% block import_gizmos %}
+  {% import_gizmo_dependency plotly_view %}
+{% endblock %}
+
+{% block header_buttons %}
+  <div class="header-button glyphicon-button" data-toggle="tooltip" data-placement="bottom" title="Help">
+    <a data-toggle="modal" data-target="#help-modal"><span class="glyphicon glyphicon-question-sign"></span></a>
+  </div>
+  <div class="header-button glyphicon-button" data-toggle="tooltip" data-placement="bottom" title="Save Points">
+    <a data-toggle="modal" data-target="#save-modal"><span class="glyphicon glyphicon-floppy-disk"></span><span class="button-text" id="save-num"> (0)</span></a>
+  </div>
+  <div class="header-button glyphicon-button" data-toggle="tooltip" data-placement="bottom" title="View Selected Graph">
+    <a data-toggle="modal" data-target="#graph-modal"><span class="glyphicon glyphicon-stats"></span><span class="button-text" id="graph-num"> (0)</span></a>
+  </div>
+  <div class="header-button glyphicon-button" data-toggle="tooltip" data-placement="bottom" title="Search By ID">
+    <a data-toggle="modal" data-target="#search-modal"><span class="glyphicon glyphicon-search"></span></a>
+  </div>
+{% endblock %}
+
+{% block app_content %}
+  <head>
+    
+  </head>
+  <body>
+    <div id="map" class="map"></div>
+    <div id="popup"></div>
+  </body>
+{% endblock %}
+
+{# Use the after_app_content block for modals #}
+{% block after_app_content %}
+  <!-- Help Modal -->
+  <div class="modal fade" id="help-modal" tabindex="-1" role="dialog" aria-labelledby="help-modal-label">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+          <h5 class="modal-title" id="help-modal-label">How to Use:</h5>
+        </div>
+        <div class="modal-body">
+          <h5>Lake Area Sliders</h5>
+          <p>
+            The sliders at the bottom of the screen all set a threshold for the lake area of each point.
+            You can change the threshold by <i>slowly</i> moving any of the sliders. The rightmost one is recommended for this, as it has been somewhat tuned for the dataset presented here.
+            Any points that are red have lake areas that are above the threshold, any points that are green have lake areas below the threshold.
+          </p>
+          <h5>Point Graphs</h5>
+          <p>
+            Clicking on a point creates a popup with the point ID, the lake area of that point, and a hydrograph for that point. Clicking the <span class="glyphicon glyphicon-stats"></span> button will also show the graph, as well as an option to disable the popups or view details. You may also select multiple points by clicking and dragging the mouse while holding Ctrl (⌘ on Mac), although no graph will be shown for these points.
+          </p>
+          <h5>Changing Point Coordinates</h5>
+          <p>
+            You are able to move each point around by selecting a point then clicking and dragging the point around. Changes are saved automatically. The <span class="glyphicon glyphicon-floppy-disk"></span> button shows changes made since the start of the session.
+          </p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-primary" data-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- Save Modal -->
+  <div class="modal fade" id="save-modal" tabindex="-1" role="dialog" aria-labelledby="save-modal-label">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+          <h5 class="modal-title" id="save-modal-label">Save Coordinate Changes</h5>
+        </div>
+        <div class="modal-body">
+          <p>Changes are <b>saved</b> automatically as points are moved. You can click <b>Update Changes</b> below to refresh the page and see any changes that were made elsewhere.</p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+          <button type="button" class="btn btn-primary" data-dismiss="modal" onClick="window.location.reload();">Update Changes</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- Graph Modal -->
+  <div class="modal fade" id="graph-modal" tabindex="-1" role="dialog" aria-labelledby="graph-modal-label">
+    <div class="modal-dialog modal-lg" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+          <h5 class="modal-title" id="graph-modal-label" style="text-align: center">ID: null</h5>
+        </div>
+        <div class="modal-body" id="graph-modal-body", style="height=60%; width=80%;">
+          <p>Select a point to get data.</p>
+        </div>
+        <div class="modal-footer">
+          <label class="btn btn-primary active" data-toggle="button" aria-pressed="true" autocomplete="off" id="popup-enable">
+            <span id="enable-text">Disable Popups</span>
+          </label>
+          <button type="button" class="btn btn-primary" id="graph-modal-details">View Details</button>
+          <button type="button" class="btn btn-primary" data-dismiss="modal">OK</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- Search Modal -->
+  <div class="modal fade" id="search-modal" tabindex="-1" role="dialog" aria-labelledby="search-modal-label">
+    <div class="modal-dialog modal-sm" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 id="search-header">Search for Station by ID
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button> 
+          </h5>
+        </div>
+        <div class="modal-body" id="search-modal-body", style="height=60%; width=80%">
+          <div style="float: left">Search: </div>
+          <div style="width: 150px;float: left">
+            <input id="search-number" type="number" min="0" max="1500000">
+          </div> <br>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-primary" id="search-button">Search</button>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
+{% block app_actions %}
+  <span style="float: left">Lake Area Sliders</span>
+  <input type="range" id="linear_slider" min="0" max="100" initial="50" step="1">
+  <input type="number" id="numberInput" min="0" max="100" initial="50", step="1">
+  <input type="range" id="exponential_slider" min="0" max="100" initial="50" step="1">
+{% endblock %}
+
+
+{% block content_dependent_styles %}
+  {{ block.super }}
+  <link href="{% static 'ol_test/css/map.css' %}" rel="stylesheet"/>
+{% endblock %}
+
+{% block scripts %}
+  {{ block.super}}
+  <script src="{% static 'ol_test/js/map.js' %}" type="text/javascript"></script>
+{% endblock %}

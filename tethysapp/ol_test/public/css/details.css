@@ -1,0 +1,102 @@
+.table-content {
+    overflow-x: auto;
+    font-family: arial, sans-serif;
+    border-collapse: collapse;
+}
+
+table.center {
+    margin-left: auto;
+    margin-right: auto;
+}
+
+tr, th, td {
+    border: 1px solid #dddddd;
+    text-align: center;
+    padding: 8px;
+}
+
+tr:nth-child(even) {
+    background-color: #dddddd;
+}
+
+.tab {
+    overflow: hidden;
+    border: 1px solid #ccc;
+    background-color: #f1f1f1;
+}
+
+.tablinks {
+    background-color: inherit;
+    border: none;
+    outline: none;
+    cursor: pointer;
+    padding: 14px 16px;
+    transition: 0.3s;
+}
+
+.tablinks:hover {
+    background-color: #ddd;
+}
+
+.tablinks.active {
+    background-color: #ccc;
+}
+
+.tabcontent {
+    display:none;
+    padding: 6px 12px;
+    border-top: none;
+    height: 100%;
+}
+
+#inner-app-content {
+    overflow: hidden;
+}
+
+.row {
+    height: 100%;
+}
+
+.column {
+    float: left;
+    padding: 10px;
+    height: 95%;
+    /* overflow: auto; */
+}
+
+.col-left {
+    margin-left: 10px;
+    width: 65%;
+}
+
+.col-right {
+    width: 30%;
+}
+
+@media screen and (max-width: 600px) {
+    .col-left, .col-right {
+        width: 100%;
+    }
+    #inner-app-content {
+        overflow-y: auto;
+    }
+}
+
+#pdf-container {
+    height:90%;
+    width: 100%;
+    overflow-y: auto;
+}
+
+#pdf-graph-content {
+    width: 100%;
+}
+
+#map {
+    width: 378px;
+    height: 378px;
+}
+
+/* #pdf-box {
+    height:100%
+} */
