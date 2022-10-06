@@ -540,7 +540,7 @@ $(function() {
     var selector = undefined;
     
     // selector if feature was picked from a selector
-    if (IDList != []) {
+    if (IDList.length > 0) {
       selector = document.createElement('select');
       selector.classList.add("popup-selector");
       // initializing the selector
@@ -639,7 +639,7 @@ $(function() {
       bod.append(PDFButton);
       if (selector != undefined)
         bod.append(selector);
-      
+
       function close(e) { // need to have a function to both add and remove it
         if (e.target.classList.contains('custom-close')) {
           $(popup.getElement()).popover('destroy');
@@ -650,107 +650,41 @@ $(function() {
     }, 250); 
   }
 
-  function selectMany(e, arr=[]) {
-    // setup for a good many things
-    var coordinates = [0,0]; // popup location
-    var curFeat = null; // popup information
-    let IDstring = "";
-    var popup_element = popup.getElement();
-    var graph_button = document.getElementById("graph-num"); // header button info
-    var graph_header = document.getElementById("graph-modal-label");
-    var graph_body = document.getElementById("graph-modal-body");
-    
-    // if a feature array was passed, use that, otherwise use the event
-    if (arr.length == 0) 
-      curFeat = e.selected[0].getProperties()['features'];
-    else
-      curFeat = arr;
-    
-    // put the popup in the middle of all the features
-    var sum = [0, 0];
-    for (let i = 0; i < curFeat.length; i++) {
-      let coords = curFeat[i].getGeometry().getCoordinates();
-      sum[0] += coords[0];
-      sum[1] += coords[1];
-    }
-    coordinates[0] = sum[0] / curFeat.length;
-    coordinates[1] = sum[1] / curFeat.length;
-    
-    // change the display of the graph header button
-    if (curFeat.length > 9 )
-      graph_button.innerHTML = " (9+)";
-    else
-      graph_button.innerHTML = " (" + curFeat.length + ")";
-
-    const IDList = [];
-
-    // display no more than 9 IDs
-    for (let i = 0; i < curFeat.length; i++) {
-      hylakID = curFeat[i].getProperties()['Hylak_id'];
-      if (i < 9)
-        IDstring += hylakID;
-      if ((curFeat.length > 9) && (i == 8))
-        IDstring += "...";
-      else if ((i < curFeat.length - 1) && (i < 9))
-        IDstring += ", ";
-      IDList.push(Number(hylakID));
-    }
-    IDList.sort(function(a, b) {return (a-b)});
-
-    // update headers
-    graph_header.innerText = "ID(s): " + IDstring;
-    graph_body.innerText = "Only one graph can be shown at a time. Please zoom in and reselect your point or select your point from the popup to display its graph.";
-    let popup_title = 'Multiple Selected';
-    let popup_content = '<div class="popover-multi-content"></div>'
-
-    // Clean up last popup and reinitialize
-    $(popup_element).popover('destroy');
-    
-    setTimeout(function() {
-      popup.setPosition(coordinates);
-
-      $(popup_element).popover({
-        'placement': 'top',
-        'animation': true,
-        'html': true,
-        'title': popup_title,
-        'content': popup_content
-      });
-
-      if (PU) $(popup_element).popover('show');
-
-      const bod = document.getElementsByClassName("popover-multi-content")[0];
-
-      // initializing the selector
-      var selector = document.createElement('select');
-      var opt = document.createElement("option");
-      opt.setAttribute("value", "-1");
-      var tex = document.createTextNode("--");
-      opt.appendChild(tex);
-      selector.appendChild(opt);
-
-      // putting the values in the selector
-      for (let i = 0; i < IDList.length; i++) {
-        var opt = document.createElement("option");
-        opt.setAttribute("value", IDList[i]);
-        var tex = document.createTextNode(IDList[i]);
-        opt.appendChild(tex);
-        selector.appendChild(opt);
-      }
-      selector.addEventListener('change', function() {
-        selectFeatDD(selector.value, IDList);
-      });
-      bod.insertAdjacentElement('afterbegin', selector);
-      
-    }, 500);
-  }
-
+  // originally just used to select a feature from the dropdowns
+  // now it's used after selecting multiple features
   function selectFeatDD(feat_id, IDList) {
     feat = vecSource.getFeatureById(feat_id);
     select.getFeatures().clear();
     select.getFeatures().push(feat);
     selectOne(null, feat, IDList);
   } 
+
+  // selects the feature with the lowest ID from many selected features
+  // whether that be from the boxselect or selecting a cluster
+  function selectMany(e, arr=[]) {
+    // setup for a good many things
+    var curFeat = null; // popup information
+    var popup_element = popup.getElement();
+    
+    // if a feature array was passed, use that, otherwise use the event
+    if (arr.length == 0) 
+      curFeat = e.selected[0].getProperties()['features'];
+    else
+      curFeat = arr;
+
+    const IDList = [];
+
+    // display no more than 9 IDs
+    for (let i = 0; i < curFeat.length; i++) {
+      hylakID = curFeat[i].getProperties()['Hylak_id'];
+      IDList.push(Number(hylakID));
+    }
+    IDList.sort(function(a, b) {return (a-b)});
+
+    // Clean up last popup and reinitialize
+    $(popup_element).popover('destroy');
+    selectFeatDD(IDList[0], IDList);
+  }
 
   function cleanse() {
     select.getFeatures().clear();
