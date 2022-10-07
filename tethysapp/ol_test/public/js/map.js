@@ -99,6 +99,13 @@ $(function() {
       text: new ol.style.Text({
         offsetY: 10,
         text: feat.getProperties()['Hylak_id'].toString(),
+        stroke: new ol.style.Stroke({
+          color: '#000',
+          width: 3,
+        }),
+        fill: new ol.style.Fill({
+          color: '#fff'
+        }),
       }),
     })
   }
@@ -238,9 +245,27 @@ $(function() {
     controls: ol.control.defaults().extend([
       new app.selectControl(),
       new ol.control.ScaleLine(),
-      // resetView,
     ]),
     
+  });
+
+  var glob_hylak_id = 1;
+
+  var vecSource2 = new ol.source.Vector({
+  });
+
+  var vector2 = new ol.layer.Vector({
+    source: vecSource2,
+    style: dynamicStyle,
+  });
+
+  var map2 = new ol.Map({
+    layers: [baseLayer, vector2],
+    target: 'map2',
+    view: new ol.View({
+        center: ol.proj.fromLonLat([0, 0]),
+        zoom: 8.4
+    }),
   });
 
   // console.log(map.getControls());
@@ -393,38 +418,80 @@ $(function() {
   map.addInteraction(trans);
   map.addInteraction(dragbox);
 
-  function downloadPDF(Hylak_id) {
-    map.once('postcompose', function(e) {
-        var canvas = e.context.canvas;
-        let url = canvas.toDataURL().replace("data:image/png;base64,", "");
-        
-        // document.getElementById("pdf-btn-text").innerText = " Loading..."
-        $.ajax({
-            url:'/apps/ol-test/pdf/ajax/',
-            method: 'POST',
-            headers: {'X-CSRFToken': csrftoken},
-            data: {
-                'hylak_id': Hylak_id,
-                'map_blob': url,
-            },
-            success: function (data) {
-                // document.getElementById("pdf-btn-text").innerText = " Done!"
-                
-                const blob = new Blob(data.split(""), {type: 'application/pdf'});
-                const burl = URL.createObjectURL(blob);
-                
-                window.open(burl, '_blank');
-                // setTimeout( function() {
-                //     document.getElementById("pdf-btn-text").innerText = " Save .pdf"
-                // }, 1500);
-            },
-            error: function() {
-                console.log("Failure...");
-            }
-        });
+  function downloadPDF() {
+    map2.once('postcompose', function(e) {
+      var canvas = e.context.canvas;
+      let url = canvas.toDataURL().replace("data:image/png;base64,", "");
+      
+      // document.getElementById("pdf-btn-text").innerText = " Loading..."
+      $.ajax({
+          url:'/apps/ol-test/pdf/ajax/',
+          method: 'POST',
+          headers: {'X-CSRFToken': csrftoken},
+          data: {
+              'hylak_id': glob_hylak_id,
+              'map_blob': url,
+          },
+          success: function (data) {
+            let btntext = document.getElementById("pdf-btn-text");
+            if (btntext != null)
+              btntext.innerHTML = '<span class="glyphicon glyphicon-floppy-save"></span><span id="csv-btn-text" > Done!</span>'
+            
+            const blob = new Blob(data.split(""), {type: 'application/pdf'});
+            const burl = URL.createObjectURL(blob);
+            
+            window.open(burl, '_blank');
+            setTimeout( function() {
+              if (btntext != null)
+                btntext.innerHTML = '<span class="glyphicon glyphicon-floppy-save"></span><span id="csv-btn-text" > Save .pdf</span>'
+            }, 1500);
+          },
+          error: function() {
+              console.log("Failure...");
+          }
+      });
     });
-    map.renderSync();
+    map2.renderSync();
 }
+
+  var loaded = 0;
+  var loading = 0;
+  var pdfON = 0;
+
+  function map2Update() {
+    if (loading == loaded) {
+      // console.log(`${loaded} | ${loading}`);
+      loaded = 0;
+      loading = 0;
+      if (pdfON) {
+        // console.log(`PDF Downloading, ${pdfON}`);
+        pdfON = 0;
+        setTimeout(function() {
+          downloadPDF();
+        }, 500);
+      }
+    }
+  }
+  
+  function map2AddLoading() {
+    loading++;
+    map2Update();
+  }
+
+  function map2AddLoaded() {
+    setTimeout(function() {
+      loaded++;
+      map2Update();
+    })
+  }
+
+  let map2Layer = map2.getLayers().item(0)
+  map2Layer.getSource().on("tileloadstart", function() {
+    map2AddLoading();
+  })
+  map2Layer.getSource().on(["tileloadend", "tileloaderror"], function() {
+    map2AddLoaded();
+  })
 
   // bookkeeping for moving features
   const changed_ids = [];
@@ -478,13 +545,13 @@ $(function() {
   })
 
   // loading text functionality
-  $('.loader').hide();
-  $(document).ajaxSend(function() {
-    $('.loader').show();
-  });
-  $(document).ajaxComplete(function() {
-    $('.loader').hide();
-  });
+  // $('.loader').hide();
+  // $(document).ajaxSend(function() {
+  //   $('.loader').show();
+  // });
+  // $(document).ajaxComplete(function() {
+  //   $('.loader').hide();
+  // });
 
   function selectOne(e, feat=null, IDList=[]) {
     var selected_feature = null; // setup
@@ -531,24 +598,19 @@ $(function() {
     detailsButton.classList.add("btn", "btn-primary", "custom-details", "popup-button")
     detailsButton.style.marginRight = "10px";
     const PDFButton = document.createElement("button");
+    PDFButton.setAttribute("id", "pdf-btn-text");
     PDFButton.innerHTML = '<span class="glyphicon glyphicon-floppy-save"></span><span id="csv-btn-text" > Save .pdf</span>'
     PDFButton.classList.add("btn", "btn-primary", "custom-details", "popup-button")
     PDFButton.style.marginRight = "10px";
     detailsButton.addEventListener('click', function() {
       location.href = "/apps/ol-test/details/" + hylak_id + "/";
     });
-    var selector = undefined;
+    // initializing the selector
+    var selector = document.createElement('select');
+    selector.classList.add("popup-selector");
     
     // selector if feature was picked from a selector
     if (IDList.length > 0) {
-      selector = document.createElement('select');
-      selector.classList.add("popup-selector");
-      // initializing the selector
-      // var opt = document.createElement("option");
-      // opt.setAttribute("value", "-1");
-      // var tex = document.createTextNode("--");
-      // opt.appendChild(tex);
-      // selector.appendChild(opt);
   
       // putting the values in the selector
       for (let i = 0; i < IDList.length; i++) {
@@ -563,19 +625,33 @@ $(function() {
       selector.addEventListener('change', function() {
         selectFeatDD(selector.value, IDList);
       });
+    } else {
+      var opt = document.createElement("option");
+        opt.setAttribute("value", hylak_id);
+        var tex = document.createTextNode(hylak_id);
+        opt.appendChild(tex);
+        selector.appendChild(opt);
     }
+
+    // console.log(selector.outerHTML);
+    // console.log(selector.innerHTML);
+
 
     // Save PDF Button on Popover
     PDFButton.addEventListener('click', function() {
-      map.getView().setCenter(coordinates);
-      let zoom = map.getView().getZoom();
-      map.getView().setZoom(8.4);
-      select.getFeatures().clear();
+      PDFButton.innerHTML = '<span class="glyphicon glyphicon-floppy-save"></span><span id="csv-btn-text" > Loading...</span>'
+      map2.getView().setCenter(coordinates);
+      // let zoom = map.getView().getZoom(); // value of zoom selector
+      map2.getView().setZoom(8.4); // set it as zoom
+      vecSource2.clear();
+      vecSource2.addFeature(selected_feature);
+      glob_hylak_id = hylak_id;
+      pdfON = 1;
       setTimeout(function() {
-        downloadPDF(hylak_id);
-        select.getFeatures().push(selected_feature);
-        map.getView().setZoom(zoom);
-      }, 1000);
+        if ((loading == loaded) && (pdfON)) {
+          map2Update();
+        }
+      }, 100);
     })
     $("#graph-modal-details").on('click', function() {
       location.href = "/apps/ol-test/details/" + hylak_id + "/";
@@ -583,18 +659,26 @@ $(function() {
 
     // display the ID and the area, if it exists, in the popup header
     if (area != null) {
-      popup_header = 'ID: ' + hylak_id + " | Area: " + area;
-      graph_header.innerHTML = 'ID: ' + hylak_id + " | Area: " + area;
+      popup_header = `ID: ${hylak_id} | Area: ${area}`;
+      graph_header.innerHTML = `ID: ${hylak_id} | Area: ${area}`;
     }
     else {
-      popup_header = 'ID: ' + hylak_id;
-      graph_header.innerHTML = 'ID: ' + hylak_id;
+      popup_header = `ID: ${hylak_id}`;
+      graph_header.innerHTML = `ID: ${hylak_id}`;
     }
       
-    // placeholder text to show that the popup isn't broken, just taking a sec
-    let loader = '<div class="loader">Loading...</div>'
-    popup_content += loader + '<div id="plot-content"></div>';
-    graph_body.innerHTML = loader + '<div id="graph-plot-content"></div>';
+    // placeholder text to show that the popup isn't broken, just taking a sec, followed by the graphs
+    popup_content += '<div class="popup-loader">Loading...</div><div id="plot-content"></div>';
+    graph_body.innerHTML = '<div class="graph-loader">Loading...</div><div id="graph-plot-content"></div>';
+
+    let template = `<div class="popover" role="tooltip">
+                      <div class="arrow"></div>
+                      <h3 class="popover-title"></h3>
+                      <div class="popover-content"></div>
+                      <h3 class="popover-footer"></h3>
+                    </div>`
+
+    // console.log(template);
 
     // Clean up last popup and reinitialize
     $(popup_element).popover('destroy');
@@ -610,8 +694,9 @@ $(function() {
         'placement': 'top',
         'animation': true,
         'html': true,
-        'title': popup_header,
-        'content': popup_content
+        'title': " ",
+        'content': popup_content,
+        'template': template
       });
       
       // making the popup appear and show data
@@ -626,27 +711,44 @@ $(function() {
         "height": Math.floor(window.innerHeight * .8),
         "timespan": "total",
       }
-      $('#plot-content').load(url, popup_data);
-      $('#graph-plot-content').load(url, graph_data);
+
+      $(".graph-loader").show();
+      $(".popup-loader").show();
+      $('#plot-content').load(url, popup_data, function() {
+        $(".popup-loader").hide();
+      });
+      $('#graph-plot-content').load(url, graph_data, function() {
+        $(".graph-loader").hide();
+      });
+
       setTimeout( function() {
         window.dispatchEvent(new Event('resize'));
       }, 500);
 
-      // adding the buttons to the popup header
-      const bod = document.getElementsByClassName("popover-title")[0];
-      bod.append(editButton);
-      bod.append(detailsButton);
-      bod.append(PDFButton);
-      if (selector != undefined)
-        bod.append(selector);
+
+      const hed = document.getElementsByClassName("popover-title")[0];
+      // hed.append(popup_header);
+      let span1 = document.createElement("span");
+      let span2 = document.createElement("span");
+      span1.innerText = "ID: ";
+      hed.append(span1);
+      hed.append(selector);
+      span2.innerText = ` | Area: ${area}`;
+      hed.append(span2);
+
+      // adding the buttons to the popup footer
+      const fut = document.getElementsByClassName("popover-footer")[0];
+      fut.append(editButton);
+      fut.append(detailsButton);
+      fut.append(PDFButton);
 
       function close(e) { // need to have a function to both add and remove it
         if (e.target.classList.contains('custom-close')) {
           $(popup.getElement()).popover('destroy');
-          bod.removeEventListener('click', close);
+          fut.removeEventListener('click', close);
         }
       }
-      bod.addEventListener('click', close);
+      fut.addEventListener('click', close);
     }, 250); 
   }
 

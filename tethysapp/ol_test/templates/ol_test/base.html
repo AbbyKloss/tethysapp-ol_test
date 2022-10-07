@@ -16,12 +16,21 @@
 {% block app_navigation_override %}
 {% endblock %}
 
+{# this and thes ettings button override are here just to recolor them #}
 {% block exit_button_override %}
   <div class="header-button exit-button">
     <a href="javascript:void(0);" onclick="TETHYS_APP_BASE.exit_app('/apps/');" data-toggle="tooltip" data-placement="bottom" title="" data-original-title="Exit">
       <span class="button-text">x</span>
     </a>
   </div>
+{% endblock %}
+
+{% block settings_button_override %}
+  {% if request.user.is_staff %}
+  <div class="header-button settings-button">
+    <a href="javascript:void(0);" onclick="TETHYS_APP_BASE.exit_app('{% url 'admin:index' %}tethys_apps/tethysapp/{{ tethys_app.id }}/change/');" data-toggle="tooltip" data-placement="bottom" title="Settings"><span class="glyphicon glyph-black glyphicon-cog"></span></a>
+  </div>
+  {%  endif %}
 {% endblock %}
 
 {% block app_content %}

@@ -9,6 +9,8 @@ def randColor(static=0) -> str:
         return '#73e69e'
     elif (static == 3): # nice teal
         return '#87DCBB'
+    elif (static == 4): # darker pink
+        return '#D48B96'
     r = lambda: randint(0,255)
     colString = '#%02X%02X%02X' % (r(),r(),r())
     print(f"OLTest's color: {colString}")

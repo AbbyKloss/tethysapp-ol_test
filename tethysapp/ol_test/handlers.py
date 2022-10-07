@@ -197,15 +197,10 @@ def createPDF (hylak_id: int, img: BytesIO) -> BytesIO:
     img.seek(0)
     test = BytesIO(img.read())
     imag = Image.open(test, formats=['png'])
-    idealsiz = inch * graphScale
+    idealsiz = int(inch * graphScale)
     imwidth, imheight = imag.size
     if (imwidth != idealsiz and imheight != idealsiz):
-        top, bot, lef, rig = 0, 0, 0, 0
-        top = (imheight / 2) - (idealsiz / 2)
-        bot = (imheight / 2) + (idealsiz / 2)
-        lef = (imwidth / 2) - (idealsiz / 2)
-        rig = (imwidth / 2) + (idealsiz / 2)
-        imag = imag.crop((lef, top, rig, bot))
+        imag = imag.resize((idealsiz, idealsiz))
     # draw OSM location
     cursorY -= graphScale*inch - 10
     cursorX = (width - (graphScale * inch)) // 2

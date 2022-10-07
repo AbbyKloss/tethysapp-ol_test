@@ -2,6 +2,11 @@
     height:100%;
     width: 100%;
     position:relative;
+    overflow-y: visible;
+}
+
+#map2 {
+    overflow-y: visible;
 }
 
 .popover {
@@ -10,11 +15,15 @@
 }
 
 #inner-app-content {
+    height: 100%;
     padding: 0;
+    overflow-y: hidden;
+    /* overflow-y: visible; */
 }
 
-#app-content, #inner-app-content, #map_view_outer_container {
+#app-content, #map_view_outer_container {
     height: 100%;
+    overflow-y: visible;
 }
 
 input {
@@ -30,13 +39,13 @@ input[type=range] {
 .popup-button {
     float: right;
     /* transform: translateY(-4px); */ /* Static method of accomplishing centering */
-    transform: translateY(-12%); /* More adjustable method */
+    /* transform: translateY(-12%); More adjustable method */
 }
 
 .popup-selector {
-    float: right;
+    /* float: right; */
     transform: translateY(-3%);
-    margin-right: 8px;
+    /* margin-right: 8px; */
 }
 
 .popup-content-button {
@@ -96,6 +105,7 @@ input[type=range] {
     top: 10px;
     left: 3em;
     background:#000;
+    overflow-y: visible;
 }
 
 .modal-lg {
@@ -108,3 +118,19 @@ input[type=range] {
     display:table;
 }
 
+.popover-footer {
+    margin: 0;
+    padding: 8px 14px;
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 100%;
+    background-color: #F7F7F7;
+    height: 50px;
+    border-top: 1px solid #EBEBEB;
+    border-radius: 0 0 5px 5px;
+}
+
+#map2 {
+    width: 378px;
+    height: 378px;
+}

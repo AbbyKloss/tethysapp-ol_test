@@ -212,13 +212,15 @@ def details(request, station_id):
 def download_station_csv(request):
     print("download_station_csv")
     if (request.method != "POST"):
+        print(request.method)
         return HttpResponse(status = 400)
     post = request.POST.dict()
     station_id = ""
 
     try:
         station_id = post['hylak_id']
-    except (KeyError, ValueError):
+    except (KeyError, ValueError) as e:
+        print(e)
         return HttpResponse(status = 400)
     # get csv data
     filename = "HydroLakes/HydroLakes_polys_v10_10km2_global_results_dswe.csv"
@@ -233,6 +235,7 @@ def download_station_csv(request):
 def pdf_ajax(request):
     # print("pdf_ajax")
     if (request.method != "POST"):
+        print(request.method)
         return HttpResponse(status = 400)
     post = request.POST.dict()
     station_id = ""
@@ -242,7 +245,8 @@ def pdf_ajax(request):
 
     try:
         station_id = int(post['hylak_id'])
-    except (KeyError, ValueError):
+    except (KeyError, ValueError) as e:
+        print(e)
         return HttpResponse(status = 400)    
 
     img_data = post['map_blob'] #.decode('UTF-8')

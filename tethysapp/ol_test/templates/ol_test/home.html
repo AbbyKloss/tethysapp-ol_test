@@ -9,16 +9,16 @@
 
 {% block header_buttons %}
   <div class="header-button glyphicon-button" data-toggle="tooltip" data-placement="bottom" title="Help">
-    <a data-toggle="modal" data-target="#help-modal"><span class="glyphicon glyphicon-question-sign"></span></a>
+    <a data-toggle="modal" data-target="#help-modal"><span class="glyphicon glyph-black glyphicon-question-sign"></span></a>
   </div>
   <div class="header-button glyphicon-button" data-toggle="tooltip" data-placement="bottom" title="Save Points">
-    <a data-toggle="modal" data-target="#save-modal"><span class="glyphicon glyphicon-floppy-disk"></span><span class="button-text" id="save-num"> (0)</span></a>
+    <a data-toggle="modal" data-target="#save-modal"><span class="glyphicon glyph-black glyphicon-floppy-disk"></span><span class="button-text" id="save-num"> (0)</span></a>
   </div>
   <div class="header-button glyphicon-button" data-toggle="tooltip" data-placement="bottom" title="View Selected Graph">
-    <a data-toggle="modal" data-target="#graph-modal"><span class="glyphicon glyphicon-stats"></span><span class="button-text" id="graph-num"> (0)</span></a>
+    <a data-toggle="modal" data-target="#graph-modal"><span class="glyphicon glyph-black glyphicon-stats"></span><span class="button-text" id="graph-num"> (0)</span></a>
   </div>
   <div class="header-button glyphicon-button" data-toggle="tooltip" data-placement="bottom" title="Search By ID">
-    <a data-toggle="modal" data-target="#search-modal"><span class="glyphicon glyphicon-search"></span></a>
+    <a data-toggle="modal" data-target="#search-modal"><span class="glyphicon glyph-black glyphicon-search"></span></a>
   </div>
 {% endblock %}
 
@@ -30,6 +30,7 @@
     <div id="map" class="map"></div>
     <div id="popup"></div>
   </body>
+  <div id="map2" class="map2"></div>
 {% endblock %}
 
 {# Use the after_app_content block for modals #}
@@ -51,11 +52,11 @@
           </p>
           <h5>Point Graphs</h5>
           <p>
-            Clicking on a point creates a popup with the point ID, the lake area of that point, and a hydrograph for that point. Clicking the <span class="glyphicon glyphicon-stats"></span> button will also show the graph, as well as an option to disable the popups or view details. You may also select multiple points by clicking and dragging the mouse while holding Ctrl (⌘ on Mac), although no graph will be shown for these points.
+            Clicking on a point creates a popup with the point ID, the lake area of that point, and a hydrograph for that point. Clicking the <span class="glyphicon glyph-black glyphicon-stats"></span> button will also show the graph, as well as an option to disable the popups or view details. You may also select multiple points by clicking and dragging the mouse while holding Ctrl (⌘ on Mac), although no graph will be shown for these points.
           </p>
           <h5>Changing Point Coordinates</h5>
           <p>
-            You are able to move each point around by selecting a point then clicking and dragging the point around. Changes are saved automatically. The <span class="glyphicon glyphicon-floppy-disk"></span> button shows changes made since the start of the session.
+            You are able to move each point around by selecting a point then clicking and dragging the point around. Changes are saved automatically. The <span class="glyphicon glyph-black glyphicon-floppy-disk"></span> button shows changes made since the start of the session.
           </p>
         </div>
         <div class="modal-footer">
@@ -124,6 +125,7 @@
       </div>
     </div>
   </div>
+
 {% endblock %}
 
 {% block app_actions %}
