@@ -597,6 +597,7 @@ $(function() {
     editButton.classList.add("btn", "btn-primary", "custom-close", "popup-button");
     detailsButton.classList.add("btn", "btn-primary", "custom-details", "popup-button")
     detailsButton.style.marginRight = "10px";
+
     const PDFButton = document.createElement("button");
     PDFButton.setAttribute("id", "pdf-btn-text");
     PDFButton.innerHTML = '<span class="glyphicon glyphicon-floppy-save"></span><span id="csv-btn-text" > Save .pdf</span>'
@@ -605,9 +606,14 @@ $(function() {
     detailsButton.addEventListener('click', function() {
       location.href = "/apps/ol-test/details/" + hylak_id + "/";
     });
-    // initializing the selector
+
+    // initializing the selectors
     var selector = document.createElement('select');
     selector.classList.add("popup-selector");
+    var zoomSel = document.createElement('select');
+    zoomSel.classList.add("popup-selector");
+
+    const zoomList = [["Closest", 13], ["Close", 12], ["Midrange", 10], ["Far", 8.4], ["Farthest", 7]]
     
     // selector if feature was picked from a selector
     if (IDList.length > 0) {
@@ -633,6 +639,15 @@ $(function() {
         selector.appendChild(opt);
     }
 
+    for (let i = 0; i < zoomList.length; i++) {
+      var opt = document.createElement("option");
+      opt.setAttribute("value", zoomList[i][1]);
+      var tex = document.createTextNode(zoomList[i][0]);
+      opt.appendChild(tex);
+      zoomSel.appendChild(opt);
+    }
+    zoomSel.selectedIndex = Math.ceil(zoomList.length / 2) - 1;
+
     // console.log(selector.outerHTML);
     // console.log(selector.innerHTML);
 
@@ -642,7 +657,7 @@ $(function() {
       PDFButton.innerHTML = '<span class="glyphicon glyphicon-floppy-save"></span><span id="csv-btn-text" > Loading...</span>'
       map2.getView().setCenter(coordinates);
       // let zoom = map.getView().getZoom(); // value of zoom selector
-      map2.getView().setZoom(8.4); // set it as zoom
+      map2.getView().setZoom(zoomSel.value); // set it as zoom
       vecSource2.clear();
       vecSource2.addFeature(selected_feature);
       glob_hylak_id = hylak_id;
@@ -741,6 +756,11 @@ $(function() {
       fut.append(editButton);
       fut.append(detailsButton);
       fut.append(PDFButton);
+
+      let span3 = document.createElement("span");
+      span3.innerText = "PDF Zoom Level: ";
+      fut.append(span3)
+      fut.append(zoomSel);
 
       function close(e) { // need to have a function to both add and remove it
         if (e.target.classList.contains('custom-close')) {
@@ -912,5 +932,9 @@ $(function() {
     if ((e.code == "Enter") || (e.code == "NumpadEnter"))
       $(searchButton).trigger('click');
   })
+
+  // mainView.on('change', function() {
+  //   console.log(mainView.getZoom());
+  // })
 
 });

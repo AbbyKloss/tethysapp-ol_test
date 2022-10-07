@@ -148,7 +148,7 @@ def createPDF (hylak_id: int, img: BytesIO) -> BytesIO:
     canv.setFont('Courier', 12)
     cursorY = 750
 
-    contents = [
+    location_set = [
         ["Continent", station.Continent],
         ["Country", station.Country],
         ["Lake Name", station.Lake_name],
@@ -157,6 +157,9 @@ def createPDF (hylak_id: int, img: BytesIO) -> BytesIO:
         ["Elevation", station.Elevation],
         ["Pour Latitude", station.Pour_lat],
         ["Pour Longitude", station.Pour_long],
+        ]
+
+    size_set = [
         ["Lake Area", station.Lake_area],
         ["Watershed Area", station.Wshd_area],
         ["Reservoir Volume(?)", station.Vol_res],
@@ -164,6 +167,9 @@ def createPDF (hylak_id: int, img: BytesIO) -> BytesIO:
         ["Total Volume", station.Vol_total],
         ["Average Depth", station.Depth_avg],
         ["Distance Average", station.Dis_avg],
+    ]
+
+    misc_set = [
         ["Hylak ID", station.Hylak_id],
         ["Grand ID", station.Grand_id],
         ["Polygon Source(?)", station.Poly_src],
@@ -173,22 +179,37 @@ def createPDF (hylak_id: int, img: BytesIO) -> BytesIO:
         ["Slope 100", station.Slope_100],
     ]
 
-    test = [contents[:len(contents)//2], contents[len(contents)//2:]]
+    setlist = [["Location:", location_set], ["Size:", size_set], ["Misc:",misc_set]]
+
+    # test = [contents[:len(contents)//2], contents[len(contents)//2:]]
     
     cursorX = 30
     curCursor = 0
-    for content in test:
-        for item in content:
+    diff = 0
+    for content in setlist:
+        diff = height - cursorY
+        canv.drawString(cursorX, cursorY, content[0])
+        cursorY -= 15
+        curCursor = cursorY
+        for item in content[1]:
             canv.drawString(cursorX, cursorY, f"{item[0]}: {item[1]}")
             cursorY -= 15
             curCursor = cursorY
-        cursorY = 750
-        cursorX = width // 2
+        cursorY -= 30
+        if (setlist.index(content) % 2):
+            cursorX = 30
+        else:
+            cursorY = height - diff
+            cursorX = width // 2
 
     graphScale = 5.25
+    cursorY = curCursor - 30
+    cursorX = 30
+
+    canv.drawString(cursorX, cursorY, f"Map Image:")
+
     cursorY = (curCursor + (graphScale * inch)) // 2
 
-    graphScale = 5.25
 
     # img = getImage(coordLon=station.coordLon, coordLat=station.coordLat)
     # if img == None:
@@ -202,7 +223,11 @@ def createPDF (hylak_id: int, img: BytesIO) -> BytesIO:
     if (imwidth != idealsiz and imheight != idealsiz):
         imag = imag.resize((idealsiz, idealsiz))
     # draw OSM location
-    cursorY -= graphScale*inch - 10
+    if (cursorY > (graphScale * inch) + 10):
+        cursorY -= graphScale*inch - 10
+    else:
+        canv.showPage()
+        cursorY = height - ((graphScale*inch) + 20)
     cursorX = (width - (graphScale * inch)) // 2
     canv.drawImage(ImageReader(imag), cursorX, cursorY, width=graphScale*inch, height=graphScale*inch)
 

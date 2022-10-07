@@ -64,6 +64,19 @@ input[type=range] {
     padding: 11px 10px;
 }
 
+.popover-footer {
+    margin-top: auto;
+    margin-bottom: auto;
+    padding: 8px 14px;
+    font-size: 150%;
+    font-weight: 400;
+    line-height: 100%;
+    background-color: #F7F7F7;
+    height: 50px;
+    border-top: 1px solid #EBEBEB;
+    border-radius: 0 0 5px 5px;
+}
+
 .popover-content {
     min-height: 0px;
     max-height: 400px;
@@ -116,18 +129,6 @@ input[type=range] {
     content: "";
     clear:both;
     display:table;
-}
-
-.popover-footer {
-    margin: 0;
-    padding: 8px 14px;
-    font-size: 14px;
-    font-weight: 400;
-    line-height: 100%;
-    background-color: #F7F7F7;
-    height: 50px;
-    border-top: 1px solid #EBEBEB;
-    border-radius: 0 0 5px 5px;
 }
 
 #map2 {
