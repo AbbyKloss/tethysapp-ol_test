@@ -10,4 +10,4 @@
 .idea/
 services.yml
 tethysapp/ol_test/testFile.py
-tethysapp/ol_test/workspaces/app_workspace/files
+tethysapp/ol_test/workspaces/app_workspace/files/HydroLakes/HydroLakes_polys_v10_10km2_global_results_dswe.csv
