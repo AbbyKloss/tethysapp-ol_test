@@ -364,7 +364,7 @@ $(function() {
         document.getElementById("pdf-btn-text").innerText = " Loading..."
         pdfON = 1;
         setTimeout(function() {
-            if ((loading == loaded) && (pdfON)) {
+            if (loading == loaded) {
                 map2Update();
             }
         }, 100);
