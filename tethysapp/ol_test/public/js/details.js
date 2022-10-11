@@ -1,4 +1,60 @@
 $(function() {
+    // layer setup for changing them
+    // most of these seem to be down today?
+    var OSM = new ol.source.OSM({
+        crossOrigin:'anonymous',
+      });
+    
+      var esri_terr_source = new ol.source.XYZ({
+        attributions: [new ol.Attribution({
+          html: 'Tiles &copy; <a href="https://services.arcgisonline.com/ArcGIS/' +
+              'rest/services/World_Terrain_Base/MapServer">ArcGIS</a>'
+        })],
+        url: 'https://server.arcgisonline.com/ArcGIS/rest/services/' +
+            'World_Terrain_Base/MapServer/tile/{z}/{y}/{x}',
+            crossOrigin:'anonymous'
+      });
+    
+      var usgs_imagery_source = new ol.source.XYZ({
+        attributions: [new ol.Attribution({
+          html: 'Tiles &copy; <a href="https://basemap.nationalmap.gov/arcgis/' +
+              'rest/services/World_Imagery/MapServer">ArcGIS</a>'
+        })],
+        url: 'https://basemap.nationalmap.gov/arcgis/rest/services/' +
+            'USGSImageryOnly/MapServer/tile/{z}/{y}/{x}',
+            crossOrigin:'anonymous'
+      });
+    
+      var usgs_imagery_labels_source = new ol.source.XYZ({
+        attributions: [new ol.Attribution({
+          html: 'Tiles &copy; <a href="https://basemap.nationalmap.gov/arcgis/' +
+              'rest/services/World_Imagery/MapServer">ArcGIS</a>'
+        })],
+        url: 'https://basemap.nationalmap.gov/arcgis/rest/services/' +
+            'USGSImageryTopo/MapServer/tile/{z}/{y}/{x}',
+            crossOrigin:'anonymous'
+      });
+    
+      var esri_source = new ol.source.XYZ({
+        attributions: [new ol.Attribution({
+          html: 'Tiles &copy; <a href="https://services.arcgisonline.com/ArcGIS/' +
+              'rest/services/World_Topo_Map/MapServer">ArcGIS</a>'
+        })],
+        url: 'https://server.arcgisonline.com/ArcGIS/rest/services/' +
+            'World_Topo_Map/MapServer/tile/{z}/{y}/{x}',
+            crossOrigin:'anonymous'
+      });
+    
+      var esri_world_source = new ol.source.XYZ({
+        attributions: [new ol.Attribution({
+          html: 'Tiles &copy; <a href="https://services.arcgisonline.com/ArcGIS/' +
+              'rest/services/World_Imagery/MapServer">ArcGIS</a>'
+        })],
+        url: 'https://server.arcgisonline.com/ArcGIS/rest/services/' +
+            'World_Imagery/MapServer/tile/{z}/{y}/{x}',
+            crossOrigin:'anonymous',
+      maxZoom:19});
+
     // necessary for POST requests, or so i'm told
     function getCookie(name) {
         let cookieValue = null;
@@ -39,19 +95,26 @@ $(function() {
     const coords = [longitude, latitude];
 
 
-    var sel = document.getElementById("pdf-selector");
-    var selVal = parseFloat(document.getElementById("pdf-selector").value);
-    // console.log("selVal: ");
-    // console.log(selVal);
+    var zoomSel = document.getElementById("zoom-selector");
+    var zoomVal = parseFloat(document.getElementById("zoom-selector").value);
 
-    var osm = new ol.layer.Tile({
-        source: new ol.source.OSM()
+
+    // map setup
+    // setting up layer like this allows us to easily change it later
+    var baseLayer = new ol.layer.Tile({
+        source: OSM
     });
+
+    // takes the feature from the information given from the server in the html
     var vecSource = new ol.source.Vector({
         features: [new ol.Feature({
             'geometry': new ol.geom.Point(ol.proj.fromLonLat(coords)),
             }), ],
     });
+
+    // vector layer with a style
+    // each point is green with a black outline
+    // has text below, white with black outline
     var vector = new ol.layer.Vector({
         source: vecSource,
         style: new ol.style.Style({
@@ -79,33 +142,53 @@ $(function() {
     });
 
     var map = new ol.Map({
-        layers: [osm, vector],
+        layers: [baseLayer, vector],
         target: 'map',
         view: new ol.View({
             center: ol.proj.fromLonLat(coords),
-            zoom: selVal
+            zoom: zoomVal
         }),
-
-        // view: new ol.View({
-        //     // center: ol.proj.fromLonLat([longitude, latitude]),
-        //     center: [0, 0],
-        //     zoom: 11
-        // }),
     });
     
-    sel.addEventListener('change', function() {
-        selVal = parseFloat(document.getElementById("pdf-selector").value);
-        map.getView().setZoom(selVal);
-        // console.log(selVal);
+    // functionality for zoom selector
+    zoomSel.addEventListener('change', function() {
+        zoomVal = parseFloat(document.getElementById("zoom-selector").value);
+        map.getView().setZoom(zoomVal);
     })
 
+    // functionality for layer selector
+    document.getElementById("layer-selector").addEventListener('change', function() {
+        switch(document.getElementById("layer-selector").value) {
+            case "arcgis":
+              baseLayer.setSource(ArcGIS);
+              break;
+            case "esri_terr":
+              baseLayer.setSource(esri_terr_source);
+              break;
+            case "usgs_imagery":
+              baseLayer.setSource(usgs_imagery_source);
+              break;
+            case "usgs_imagery_labels":
+              baseLayer.setSource(usgs_imagery_labels_source);
+              break;
+            case "esri_source":
+              baseLayer.setSource(esri_source);
+              break;
+            case "esri_world":
+              baseLayer.setSource(esri_world_source);
+              break;
+            default:
+              baseLayer.setSource(OSM);
+          }
+    })
 
+    // function that downloads pdfs
+    // screenshots the offscreen map div, sends it to server
+    // asks server for a pdf
     function downloadPDF() {
         map.once('postcompose', function(e) {
             var canvas = e.context.canvas;
             let url = canvas.toDataURL().replace("data:image/png;base64,", "");
-            
-            // console.log(map.getView().getZoom());
             $.ajax({
                 url:'/apps/ol-test/pdf/ajax/',
                 method: 'POST',
@@ -133,10 +216,13 @@ $(function() {
         map.renderSync();
     }
 
+    // setup to make sure map loaded before asking for pdf
     var loaded = 0;
     var loading = 0;
     var pdfON = 0;
 
+    // ensures map loaded, then if the pdf button is clicked, download the pdf
+    // if not, neat, the map's updated anyways
     function map2Update() {
         if (loading == loaded) {
         // console.log(`${loaded} | ${loading}`);
@@ -152,6 +238,9 @@ $(function() {
         }
     }
     
+    // these two functions just make sure the map is regularly updated,
+    // it checks for the pdf button regularly, and nothing happens until
+    // everything that should be loaded is
     function map2AddLoading() {
         loading++;
         map2Update();
@@ -164,6 +253,7 @@ $(function() {
         })
     }
 
+    // implementing the functions added
     let mapLayer = map.getLayers().item(0)
     mapLayer.getSource().on("tileloadstart", function() {
         map2AddLoading();
@@ -172,11 +262,8 @@ $(function() {
         map2AddLoaded();
     })
 
-    // console.log(document.getElementById("map"));
-    // map.once('postcompose', function(e) {
-    //     console.log(e);
-    // });
-
+    // functionality for switching tabs in the header
+    // basically just shows and hides elements based on what header button is clicked
     function openTab(e) {
         let tablinks = document.getElementsByClassName("tablinks");
         let tabcontent = document.getElementsByClassName("tabcontent");
@@ -197,7 +284,9 @@ $(function() {
     }
     
 
-
+    // simple download csv function
+    // mostly just asks the server for the file,
+    // takes it, and forces the browser to download it
     function downloadCSV() {
         document.getElementById("csv-btn-text").innerText = " Loading..."
 			$.ajax({
@@ -227,13 +316,14 @@ $(function() {
 			})
     }
 
-
+    // makes the tab buttons work
     for (let i = 0; i < tablinks.length; i++) {
         tablinks[i].addEventListener('click', openTab);
     }
-    $(tablinks[0]).trigger('click');
-    graphHeight = document.querySelector("#location-content").clientHeight - 100;
+    $(tablinks[0]).trigger('click'); // ensures one is selected by default
+    graphHeight = document.querySelector("#location-content").clientHeight - 100; // the graphs are funky, they need a definite height to load in
 
+    // graph loading setup
     let url = "/apps/ol-test/hydrographs/ajax/";
     let total_data = {
         "hylak_id": Hylak_id,
@@ -255,9 +345,7 @@ $(function() {
         "height": graphHeight,
         "timespan": "daily",
     }
-    let pdf_data = {
-        "hylak_id": Hylak_id,
-    }
+    // graph loading payoff (all of these load the graphs serially in each of their tabs)
     $('#graph-normal-plot').load(url, total_data, function() {
         $("#normal-loader").hide();
     });
@@ -271,12 +359,13 @@ $(function() {
         $("#daily-loader").hide();
     });
 
+    // simple functionality for the download buttons
     document.getElementById("download-pdf-btn").addEventListener('click', function() {
         document.getElementById("pdf-btn-text").innerText = " Loading..."
         pdfON = 1;
         setTimeout(function() {
             if ((loading == loaded) && (pdfON)) {
-            map2Update();
+                map2Update();
             }
         }, 100);
     });

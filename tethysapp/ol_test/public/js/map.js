@@ -192,7 +192,6 @@ $(function() {
     // switch statement based on the value of selector
     // the function that actually changes the source
     var changeMapSource = function() {
-      console.log(selector.value);
       switch(selector.value) {
         case "arcgis":
           baseLayer.setSource(ArcGIS);
@@ -231,11 +230,6 @@ $(function() {
   };
   ol.inherits(app.selectControl, ol.control.Control);
 
-  // var resetView = new ol.control.ZoomToExtent({
-  //   // "extent": extent,
-  //   "label": "R",  
-  // })
-
   // classic map declaration
   // with a control twist
   var map = new ol.Map({
@@ -249,10 +243,11 @@ $(function() {
     
   });
 
-  var glob_hylak_id = 1;
+  // setup for map screenshot for pdf
+  // instantiating a second map offscreen to take screenshots from
+  var glob_hylak_id = 1; 
 
-  var vecSource2 = new ol.source.Vector({
-  });
+  var vecSource2 = new ol.source.Vector();
 
   var vector2 = new ol.layer.Vector({
     source: vecSource2,
@@ -267,9 +262,6 @@ $(function() {
         zoom: 8.4
     }),
   });
-
-  // console.log(map.getControls());
-  // console.log(map.getControls().item(5));
   
 
 
@@ -301,6 +293,8 @@ $(function() {
   var vecSource;
   var clstSource;
 
+  // loading the geojson to the vector layer source features
+  // updating many things based on that information, such as the reset view button and the lake area sliders
   $.getJSON( "load_GJSON", function(gjsn) {
     // console.log(gjsn);
     let col = '#5118ad';
@@ -418,6 +412,10 @@ $(function() {
   map.addInteraction(trans);
   map.addInteraction(dragbox);
 
+  // download pdf functionality
+  // relatively simple here, screenshots the offscreen map,
+  // sends it to the server, asks for a pdf,
+  // displays it in a new tab
   function downloadPDF() {
     map2.once('postcompose', function(e) {
       var canvas = e.context.canvas;
@@ -454,10 +452,14 @@ $(function() {
     map2.renderSync();
 }
 
+  // map screenshot setup
   var loaded = 0;
   var loading = 0;
   var pdfON = 0;
 
+  // checks if everything's loaded properly
+  // if it is, and the download pdf button was pressed,
+  // downloads the pdf
   function map2Update() {
     if (loading == loaded) {
       // console.log(`${loaded} | ${loading}`);
@@ -473,6 +475,7 @@ $(function() {
     }
   }
   
+  // these functions check if things are loading and if everything that's loading has loaded
   function map2AddLoading() {
     loading++;
     map2Update();
@@ -485,6 +488,9 @@ $(function() {
     })
   }
 
+  // implementing all the above functions
+  // .on() -> map2AddLoading/Loaded() -> map2Update() -> downloadPDF()
+  // what a tangled web i weave
   let map2Layer = map2.getLayers().item(0)
   map2Layer.getSource().on("tileloadstart", function() {
     map2AddLoading();
@@ -590,6 +596,18 @@ $(function() {
     let popup_content = '';
 
     // popup button initialization (setup)
+    // adds 3 buttons and two selectors
+    // buttons:
+    //  "Save .pdf", "View Details", "Edit Point"
+    // selectors:
+    //  ID Selector, Zoom Level Selector
+    // all of these require so much boilerplate when setting up with javascript,
+    // the main takeaway is:
+    //  edit point hides the point so you can move it
+    //  view details opens the details page for that point
+    //  save .pdf saves the pdf of that point based on the zoom level slider and the current layer view
+    //  the id selector changes what point is selected based on the id list passed (either just that one point's ID or a whole host of them, depending on how it was selected)
+    //  zoom level slider changes the zoom level of the offscreen map for pdf downloads
     const editButton = document.createElement("button");
     const detailsButton = document.createElement("button");
     editButton.innerText = "Edit Point";
@@ -617,7 +635,6 @@ $(function() {
     
     // selector if feature was picked from a selector
     if (IDList.length > 0) {
-  
       // putting the values in the selector
       for (let i = 0; i < IDList.length; i++) {
         var opt = document.createElement("option");
@@ -672,6 +689,8 @@ $(function() {
       location.href = "/apps/ol-test/details/" + hylak_id + "/";
     })
 
+    /****** end of button setup (kind of, actually putting them in the popup is later) ******/
+
     // display the ID and the area, if it exists, in the popup header
     if (area != null) {
       popup_header = `ID: ${hylak_id} | Area: ${area}`;
@@ -681,6 +700,7 @@ $(function() {
       popup_header = `ID: ${hylak_id}`;
       graph_header.innerHTML = `ID: ${hylak_id}`;
     }
+
       
     // placeholder text to show that the popup isn't broken, just taking a sec, followed by the graphs
     popup_content += '<div class="popup-loader">Loading...</div><div id="plot-content"></div>';
@@ -741,8 +761,9 @@ $(function() {
       }, 500);
 
 
+      // putting the buttons and selectors in the popover
+      // also changing the popover title to include all the data it needs, including selector
       const hed = document.getElementsByClassName("popover-title")[0];
-      // hed.append(popup_header);
       let span1 = document.createElement("span");
       let span2 = document.createElement("span");
       span1.innerText = "ID: ";
@@ -808,6 +829,7 @@ $(function() {
     selectFeatDD(IDList[0], IDList);
   }
 
+  // when removing anything from the selection, just remove everything
   function cleanse() {
     select.getFeatures().clear();
     $(popup.getElement()).popover('destroy');
@@ -818,6 +840,10 @@ $(function() {
     document.getElementById("graph-num").innerHTML = " (0)";
   }
 
+  // if you select one element, trigger selectOne()
+  // (which can trigger selectMany() which can trigger selectOne() (my code is a mess sometimes))
+  //   at least it can't trigger selectMany() after that second selectOne() call
+  // if you select nothing, get rid of all elements
   select.on('select', function(e) {
     if (e.selected.length > 0 )
       selectOne(e);
@@ -825,6 +851,8 @@ $(function() {
       cleanse();
   })
 
+  // if you select elements with the box selector, it adds them all to a list and passes that list
+  // to either selectOne() or selectMany(), depending on how many elements were selected
   dragbox.on('boxend', function(e) {
     // features that intersect the box are added to an array for processing
     var extent = dragbox.getGeometry().getExtent();
@@ -933,6 +961,8 @@ $(function() {
       $(searchButton).trigger('click');
   })
 
+  // commented out because i use this a lot for debugging
+  // whenever the map view is changed, show the zoom level
   // mainView.on('change', function() {
   //   console.log(mainView.getZoom());
   // })

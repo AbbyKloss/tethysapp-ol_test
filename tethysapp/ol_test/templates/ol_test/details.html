@@ -24,21 +24,9 @@
             <button class="tablinks" id="graph-yearly">Yearly Average Graph</button>
             <button class="tablinks" id="graph-monthly">Monthly Average Graph</button>
             <button class="tablinks" id="graph-daily">Daily Average Graph</button>
+            <button class="tablinks" id="data-download">Download Data</button>
             {% comment %} <button class="tablinks" id="pdf">View PDF</button> {% endcomment %}
-            <button class="btn btn-info btn-download" id="download-pdf-btn">
-                <span class="glyphicon glyph-black glyphicon-floppy-save"></span><span id="pdf-btn-text" class="button-text"> Save .pdf</span>
-            </button>
-            <button class="btn btn-info btn-download" id="download-csv-btn">
-                <span class="glyphicon glyph-black glyphicon-floppy-save"></span><span id="csv-btn-text" class="button-text"> Save .csv</span>
-            </button>
-            <span>PDF Zoom Level: </span>
-            <select id="pdf-selector"> <!--- [["Closest", 13], ["Close", 12], ["Midrange", 10], ["Far", 8.4], ["Farthest", 7]] -->
-                <option value="13">Closest</option>
-                <option value="12">Close</option>
-                <option selected value="10">Midrange</option>
-                <option value="8.4">Far</option>
-                <option value="7">Farthest</option>
-            </select>
+            
         </div>
     </head>
     <body>
@@ -109,6 +97,39 @@
         <div id="graph-daily-content" class="tabcontent graphcontent">
             <div id="daily-loader">Loading...</div>
             <div id="graph-daily-plot"></div>
+        </div>
+
+        <div id="data-download-content" class="tabcontent download-content">
+            <h3>Download Options:</h3>
+            <button class="btn btn-info btn-download" id="download-pdf-btn">
+                <span class="glyphicon glyph-black glyphicon-floppy-save"></span><span id="pdf-btn-text" class="button-text"> Save .pdf</span>
+            </button>
+            <button class="btn btn-info btn-download" id="download-csv-btn">
+                <span class="glyphicon glyph-black glyphicon-floppy-save"></span><span id="csv-btn-text" class="button-text"> Save .csv</span>
+            </button>
+            <br>
+            <br>
+            <br>
+            <h3>PDF Options:</h3>
+            <span>PDF Zoom Level: </span>
+            <select id="zoom-selector"> <!--- [["Closest", 13], ["Close", 12], ["Midrange", 10], ["Far", 8.4], ["Farthest", 7]] -->
+                <option value="13">Closest</option>
+                <option value="12">Close</option>
+                <option selected value="10">Midrange</option>
+                <option value="8.4">Far</option>
+                <option value="7">Farthest</option>
+            </select>
+            <br>
+            <br>
+            <span>PDF Map Layer: </span>
+            <select id="layer-selector"> <!-- ["osm", "OpenStreetMap"], ["esri_source", "ESRI"], ["esri_terr", "ESRI Terrain"], ["usgs_imagery", "USGS Imagery"], ["usgs_imagery_labels", "USGS Imagery (Labels)"], ["esri_world", "ESRI World"], -->
+                <option value="osm">OpenStreetMap</option>
+                <option value="esri_source">ESRI</option>
+                <option value="esri_terr">ESRI Terrain</option>
+                <option value="usgs_imagery">USGS Imagery</option>
+                <option value="usgs_imagery_labels">USGS Imagery (Labels)</option>
+                <option value="esri_world">ESRI World</option>
+            </select>
         </div>
 
         {% comment %} <div id="pdf-content" class="tabcontent pdf-tab-content">
