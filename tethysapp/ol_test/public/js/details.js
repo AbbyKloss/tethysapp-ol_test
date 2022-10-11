@@ -59,9 +59,16 @@ $(function() {
               radius: 5,
             }),
             text: new ol.style.Text({
-              offsetY: 10,
-              text: Hylak_id.toString(),
-            }),
+                offsetY: 10,
+                text: Hylak_id.toString(),
+                stroke: new ol.style.Stroke({
+                  color: '#000',
+                  width: 3,
+                }),
+                fill: new ol.style.Fill({
+                  color: '#fff'
+                }),
+              })
           })
     });
 
