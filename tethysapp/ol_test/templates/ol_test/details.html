@@ -31,6 +31,14 @@
             <button class="btn btn-info btn-download" id="download-csv-btn">
                 <span class="glyphicon glyph-black glyphicon-floppy-save"></span><span id="csv-btn-text" class="button-text"> Save .csv</span>
             </button>
+            <span>PDF Zoom Level: </span>
+            <select id="pdf-selector"> <!--- [["Closest", 13], ["Close", 12], ["Midrange", 10], ["Far", 8.4], ["Farthest", 7]] -->
+                <option value="13">Closest</option>
+                <option value="12">Close</option>
+                <option selected value="10">Midrange</option>
+                <option value="8.4">Far</option>
+                <option value="7">Farthest</option>
+            </select>
         </div>
     </head>
     <body>

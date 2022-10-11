@@ -34,9 +34,15 @@ $(function() {
     // console.log(document.getElementById("location-content"));
     let latitude = parseFloat(document.getElementById("location-set-Latitude").innerText);
     let longitude = parseFloat(document.getElementById("location-set-Longitude").innerText);
-    console.log(latitude);
-    console.log(longitude);
+    // console.log(latitude);
+    // console.log(longitude);
     const coords = [longitude, latitude];
+
+
+    var sel = document.getElementById("pdf-selector");
+    var selVal = parseFloat(document.getElementById("pdf-selector").value);
+    // console.log("selVal: ");
+    // console.log(selVal);
 
     var osm = new ol.layer.Tile({
         source: new ol.source.OSM()
@@ -77,7 +83,7 @@ $(function() {
         target: 'map',
         view: new ol.View({
             center: ol.proj.fromLonLat(coords),
-            zoom: 8.4
+            zoom: selVal
         }),
 
         // view: new ol.View({
@@ -86,6 +92,85 @@ $(function() {
         //     zoom: 11
         // }),
     });
+    
+    sel.addEventListener('change', function() {
+        selVal = parseFloat(document.getElementById("pdf-selector").value);
+        map.getView().setZoom(selVal);
+        // console.log(selVal);
+    })
+
+
+    function downloadPDF() {
+        map.once('postcompose', function(e) {
+            var canvas = e.context.canvas;
+            let url = canvas.toDataURL().replace("data:image/png;base64,", "");
+            
+            // console.log(map.getView().getZoom());
+            $.ajax({
+                url:'/apps/ol-test/pdf/ajax/',
+                method: 'POST',
+                headers: {'X-CSRFToken': csrftoken},
+                data: {
+                    'hylak_id': Hylak_id,
+                    'map_blob': url,
+                },
+                success: function (data) {
+                    document.getElementById("pdf-btn-text").innerText = " Done!"
+                    
+                    const blob = new Blob(data.split(""), {type: 'application/pdf'});
+                    const burl = URL.createObjectURL(blob);
+                    
+                    window.open(burl, '_blank');
+                    setTimeout( function() {
+                        document.getElementById("pdf-btn-text").innerText = " Save .pdf"
+                    }, 1500);
+                },
+                error: function() {
+                    console.log("Failure...");
+                }
+            });
+        });
+        map.renderSync();
+    }
+
+    var loaded = 0;
+    var loading = 0;
+    var pdfON = 0;
+
+    function map2Update() {
+        if (loading == loaded) {
+        // console.log(`${loaded} | ${loading}`);
+        loaded = 0;
+        loading = 0;
+        if (pdfON) {
+            // console.log(`PDF Downloading, ${pdfON}`);
+            pdfON = 0;
+            setTimeout(function() {
+            downloadPDF();
+            }, 500);
+        }
+        }
+    }
+    
+    function map2AddLoading() {
+        loading++;
+        map2Update();
+    }
+
+    function map2AddLoaded() {
+        setTimeout(function() {
+        loaded++;
+        map2Update();
+        })
+    }
+
+    let mapLayer = map.getLayers().item(0)
+    mapLayer.getSource().on("tileloadstart", function() {
+        map2AddLoading();
+    })
+    mapLayer.getSource().on(["tileloadend", "tileloaderror"], function() {
+        map2AddLoaded();
+    })
 
     // console.log(document.getElementById("map"));
     // map.once('postcompose', function(e) {
@@ -142,38 +227,6 @@ $(function() {
 			})
     }
 
-    function downloadPDF() {
-        map.once('postcompose', function(e) {
-            var canvas = e.context.canvas;
-            let url = canvas.toDataURL().replace("data:image/png;base64,", "");
-            
-            document.getElementById("pdf-btn-text").innerText = " Loading..."
-            $.ajax({
-                url:'/apps/ol-test/pdf/ajax/',
-                method: 'POST',
-                headers: {'X-CSRFToken': csrftoken},
-                data: {
-                    'hylak_id': Hylak_id,
-                    'map_blob': url,
-                },
-                success: function (data) {
-                    document.getElementById("pdf-btn-text").innerText = " Done!"
-                    
-                    const blob = new Blob(data.split(""), {type: 'application/pdf'});
-                    const burl = URL.createObjectURL(blob);
-                    
-                    window.open(burl, '_blank');
-                    setTimeout( function() {
-                        document.getElementById("pdf-btn-text").innerText = " Save .pdf"
-                    }, 1500);
-                },
-                error: function() {
-                    console.log("Failure...");
-                }
-            });
-        });
-        map.renderSync();
-    }
 
     for (let i = 0; i < tablinks.length; i++) {
         tablinks[i].addEventListener('click', openTab);
@@ -218,6 +271,14 @@ $(function() {
         $("#daily-loader").hide();
     });
 
-    document.getElementById("download-pdf-btn").addEventListener('click', downloadPDF);
+    document.getElementById("download-pdf-btn").addEventListener('click', function() {
+        document.getElementById("pdf-btn-text").innerText = " Loading..."
+        pdfON = 1;
+        setTimeout(function() {
+            if ((loading == loaded) && (pdfON)) {
+            map2Update();
+            }
+        }, 100);
+    });
     document.getElementById("download-csv-btn").addEventListener('click', downloadCSV);
 })
