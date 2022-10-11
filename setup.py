@@ -16,13 +16,13 @@ resource_files += find_resource_files('tethysapp/' + app_package + '/workspaces'
 
 setup(
     name=release_package,
-    version='0.0.1',
+    version='0.0.3',
     description='',
     long_description='',
     keywords='',
-    author='JFK 2',
+    author='@AbbyKloss',
     author_email='',
-    url='',
+    url='https://github.com/AbbyKloss/tethysapp-ol_test',
     license='',
     packages=find_namespace_packages(),
     package_data={'': resource_files},

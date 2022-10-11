@@ -2,18 +2,21 @@ from tethys_sdk.base import TethysAppBase, url_map_maker
 from tethys_sdk.app_settings import PersistentStoreDatabaseSetting
 from random import randint
 
+# i await the day tethys moves to python 3.10+ so i can use a match case statement here
 def randColor(static=0) -> str:
-    if (static == 1): # nice pink
-        return '#f5a9b8'
+    colString = ''
+    if (static == 1):   # nice pink
+        colString = '#F5A9B8'
     elif (static == 2): # mint green
-        return '#73e69e'
+        colString = '#73E69E'
     elif (static == 3): # nice teal
-        return '#87DCBB'
+        colString = '#87DCBB'
     elif (static == 4): # darker pink
-        return '#D48B96'
-    r = lambda: randint(0,255)
-    colString = '#%02X%02X%02X' % (r(),r(),r())
-    print(f"OLTest's color: {colString}")
+        colString = '#D48B96'
+    else:               # random generation
+        r = lambda: randint(0,255)
+        colString = '#%02X%02X%02X' % (r(),r(),r())
+        print(f"OLTest's color: {colString}")
     return colString
 
 class OlTest(TethysAppBase):

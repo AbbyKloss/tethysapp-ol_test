@@ -8,11 +8,18 @@ from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.utils import ImageReader
 from reportlab.lib.units import inch
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
 from PIL import Image
 from .app import OlTest as app
 from .helpers import get_workspace
 from .model import Station
+import os
 
+# an attempt to somewhat speed up the details page and creation of pdfs
+# saves 4-5s when used well
+glob_HID = 0
+glob_df = None
 
 def create_hydrograph(hylakID: str, filename: str, timespan="total", heightIn='520', widthIn='100%', pdf=False, graphScale = 5.25): # -> Tuple[PlotlyView, BytesIO]:
     """
@@ -23,12 +30,19 @@ def create_hydrograph(hylakID: str, filename: str, timespan="total", heightIn='5
     timespan = timespan.lower()
     hylakID = str(hylakID)
 
-    # get CSV
-    file_path = get_workspace() + "/files/" + filename
-    df = pd.read_csv(file_path, usecols=["Dates", hylakID])
+    global glob_HID
+    global glob_df
+
+    # get CSV or dataframe already in memory
+    if (hylakID != glob_HID):
+        glob_HID = hylakID
+        file_path = get_workspace() + "/files/" + filename
+        df = pd.read_csv(file_path, usecols=["Dates", hylakID])
+        glob_df = df.copy()
+    else:
+        df = glob_df.copy()
     
     # prepare it for processing
-    # data = df.copy()
     name = ""
     time = []
     flow = []
@@ -123,6 +137,7 @@ def createCSV(hylakID: str, filename: str) -> str:
 
     return outputString
 
+
 def createPDF (hylak_id: int, img: BytesIO) -> BytesIO:
     # making sure input is fine
     hylak_id = int(hylak_id)
@@ -181,8 +196,6 @@ def createPDF (hylak_id: int, img: BytesIO) -> BytesIO:
 
     setlist = [["Location:", location_set], ["Size:", size_set], ["Misc:",misc_set]]
 
-    # test = [contents[:len(contents)//2], contents[len(contents)//2:]]
-    
     cursorX = 30
     curCursor = 0
     diff = 0
@@ -242,8 +255,8 @@ def createPDF (hylak_id: int, img: BytesIO) -> BytesIO:
         else:
             canv.showPage()
             cursorY = height - ((graphScale*inch) + 20)
-        # print(f"{span}: {cursorY}")
         canv.drawImage(ImageReader(imag), cursorX, cursorY, width=8*inch, height=graphScale*inch)
+    
 
     canv.save()
     return outfile
