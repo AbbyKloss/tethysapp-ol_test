@@ -55,6 +55,26 @@ $(function() {
         crossOrigin:'anonymous',
   maxZoom:19});
 
+  var stamen_toner_source = new ol.source.XYZ({
+    attributions: [new ol.Attribution({
+      html: `Map tiles by <a href="http://stamen.com">Stamen Design</a>, under <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>. 
+            Data by <a href="http://openstreetmap.org">OpenStreetMap</a>, under <a href="http://www.openstreetmap.org/copyright">ODbL</a>.`
+    })],
+    url: 'https://stamen-tiles.a.ssl.fastly.net/toner/{z}/{x}/{y}.png',
+    crossOrigin: 'anonymous',
+    maxZoom:19
+  })
+
+  var stamen_watercolor_source = new ol.source.XYZ({
+    attributions: [new ol.Attribution({
+      html: `Map tiles by <a href="http://stamen.com">Stamen Design</a>, under <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>.
+            Data by <a href="http://openstreetmap.org">OpenStreetMap</a>, under <a href="http://creativecommons.org/licenses/by-sa/3.0">CC BY SA</a>.`
+    })],
+    url: 'https://stamen-tiles.a.ssl.fastly.net/watercolor/{z}/{x}/{y}.jpg',
+    crossOrigin: 'anonymous',
+    maxZoom:19
+  })
+
   // input mechanisms at the bottom of the screen, from right to left
   var eslider = document.getElementById("exponential_slider");
   var number = document.getElementById('numberInput');
@@ -189,6 +209,8 @@ $(function() {
       ["usgs_imagery", "USGS Imagery"],
       ["usgs_imagery_labels", "USGS Imagery (Labels)"],
       ["esri_world", "ESRI World"],
+      ["stamen_toner", "Stamen Toner"],
+      ["stamen_watercolor", "Stamen Watercolor"],
     ];
     
     // iteratively adding options to the selector
@@ -222,6 +244,12 @@ $(function() {
           break;
         case "esri_world":
           baseLayer.setSource(esri_world_source);
+          break;
+        case "stamen_toner":
+          baseLayer.setSource(stamen_toner_source)
+          break;
+        case "stamen_watercolor":
+          baseLayer.setSource(stamen_watercolor_source);
           break;
         default:
           baseLayer.setSource(OSM);
