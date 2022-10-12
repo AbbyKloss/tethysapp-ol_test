@@ -283,7 +283,6 @@ $(function() {
   ol.inherits(app.selectControl, ol.control.Control);
 
   function controlPadding(coords) {
-    console.log(document.getElementsByClassName('ol-mouse-position')[0])
     return ol.coordinate.format(coords, '<div id="mouse-position-text">Lat:&nbsp;&nbsp;{y}<br>Lon:&nbsp;{x}</div>', 4);
   }
 
@@ -462,7 +461,7 @@ $(function() {
 
   var trans = new ol.interaction.Translate({
     features: select.getFeatures(),
-    layer: vector
+    layer: vector,
   })
 
   var dragbox = new ol.interaction.DragBox({
@@ -622,6 +621,7 @@ $(function() {
 
   function selectOne(e, feat=null, IDList=[]) {
     var selected_feature = null; // setup
+    trans.setActive(false);
 
     // if a feature is passed, use that
     if (feat)
@@ -846,6 +846,7 @@ $(function() {
 
       function close(e) { // need to have a function to both add and remove it
         if (e.target.classList.contains('custom-close')) {
+          trans.setActive(true);
           $(popup.getElement()).popover('destroy');
           fut.removeEventListener('click', close);
         }
