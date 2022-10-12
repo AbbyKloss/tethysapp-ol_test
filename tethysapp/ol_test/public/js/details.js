@@ -55,24 +55,6 @@ $(function() {
             crossOrigin:'anonymous',
       maxZoom:19});
 
-    // necessary for POST requests, or so i'm told
-    function getCookie(name) {
-        let cookieValue = null;
-        if (document.cookie && document.cookie !== '') {
-            const cookies = document.cookie.split(';');
-            for (let i = 0; i < cookies.length; i++) {
-                const cookie = cookies[i].trim();
-                // Does this cookie string begin with the name we want?
-                if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                    break;
-                }
-            }
-        }
-        return cookieValue;
-    }
-    const csrftoken = getCookie('csrftoken');
-
     let urlArray = window.location.href.split("/").filter(n => n);
     let Hylak_id = parseInt(urlArray[urlArray.length - 1]);
     let graphHeight = 1000;
@@ -192,11 +174,11 @@ $(function() {
             $.ajax({
                 url:'/apps/ol-test/pdf/ajax/',
                 method: 'POST',
-                headers: {'X-CSRFToken': csrftoken},
                 data: {
                     'hylak_id': Hylak_id,
                     'map_blob': url,
                 },
+                dataType: "text",
                 success: function (data) {
                     document.getElementById("pdf-btn-text").innerText = " Done!"
                     
@@ -209,7 +191,10 @@ $(function() {
                     }, 1500);
                 },
                 error: function() {
-                    console.log("Failure...");
+                    document.getElementById("pdf-btn-text").innerText = " Failed...";
+                    setTimeout( function() {
+                        document.getElementById("pdf-btn-text").innerText = " Save .pdf";
+                    }, 1500);
                 }
             });
         });
@@ -291,7 +276,7 @@ $(function() {
         document.getElementById("csv-btn-text").innerText = " Loading..."
 			$.ajax({
 				url:'/apps/ol-test/download_station_csv/',
-				method: 'POST',
+				method: 'GET',
                 data: { "hylak_id": Hylak_id },
 				success: function (data) {
                     document.getElementById("csv-btn-text").innerText = " Done!"
@@ -312,6 +297,10 @@ $(function() {
 				},
 				error: function() {
 					console.log("Failure...");
+                    document.getElementById("csv-btn-text").innerText = " Failed...";
+                    setTimeout( function() {
+                        document.getElementById("csv-btn-text").innerText = " Save .csv";
+                    }, 1500);
 				}
 			})
     }

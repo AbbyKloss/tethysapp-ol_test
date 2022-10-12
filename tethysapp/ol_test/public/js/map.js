@@ -60,25 +60,6 @@ $(function() {
   var number = document.getElementById('numberInput');
   var lslider = document.getElementById("linear_slider");
 
-  // necessary for POST requests, or so i'm told
-  function getCookie(name) {
-    let cookieValue = null;
-    if (document.cookie && document.cookie !== '') {
-        const cookies = document.cookie.split(';');
-        for (let i = 0; i < cookies.length; i++) {
-            const cookie = cookies[i].trim();
-            // Does this cookie string begin with the name we want?
-            if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                break;
-            }
-        }
-    }
-    return cookieValue;
-  }
-  const csrftoken = getCookie('csrftoken');
-
-
   // function for vecSource's features
   function dynamicStyle(feat) {
     let area = feat.get('Lake_area');
@@ -253,27 +234,6 @@ $(function() {
     container.setAttribute('id', 'background-select');
     container.append(selector);
     container.append(document.createElement("br"));
-    // var span1 = document.createElement("span");
-    // var span2 = document.createElement("span");
-    // span1.innerText = "Latitude = ";
-    // span2.innerText = "Longitude = ";
-    // span1.classList.add("controller-text");
-    // span2.classList.add("controller-text");
-    // let spanStyle = "color: #fff"
-    // span1.style = spanStyle;
-    // span2.style = spanStyle;
-    // var latitude = document.createElement("input");
-    // var longitude = document.createElement("input");
-    // latitude.classList.add("controller-number");
-    // longitude.classList.add("controller-number");
-    // latitude.setAttribute("type", "number");
-    // longitude.setAttribute("type", "number");
-    // container.append(span1);
-    // container.append(latitude);
-    // container.append(document.createElement("br"));
-    // container.append(span2);
-    // container.append(longitude);
-
 
     ol.control.Control.call(this, {
       element: container,
@@ -461,7 +421,7 @@ $(function() {
 
   var trans = new ol.interaction.Translate({
     features: select.getFeatures(),
-    layer: vector,
+    // layer: vector,
   })
 
   var dragbox = new ol.interaction.DragBox({
@@ -485,7 +445,6 @@ $(function() {
       $.ajax({
           url:'/apps/ol-test/pdf/ajax/',
           method: 'POST',
-          headers: {'X-CSRFToken': csrftoken},
           data: {
               'hylak_id': glob_hylak_id,
               'map_blob': url,
@@ -610,23 +569,19 @@ $(function() {
     PU = !PU;
   })
 
-  // loading text functionality
-  // $('.loader').hide();
-  // $(document).ajaxSend(function() {
-  //   $('.loader').show();
-  // });
-  // $(document).ajaxComplete(function() {
-  //   $('.loader').hide();
-  // });
-
   function selectOne(e, feat=null, IDList=[]) {
     var selected_feature = null; // setup
     trans.setActive(false);
 
+
+    let editable = true;
     // if a feature is passed, use that
-    if (feat)
+    // generally multiple things are selected in this case
+    // i.e. a cluster, the dragbox
+    if (feat) {
       selected_feature = feat;
-    else
+      editable = false;
+    } else
       selected_feature = e.selected[0];
 
     // if either nothing or a cluster holding more than one point is selected
@@ -674,14 +629,18 @@ $(function() {
     editButton.innerText = "Edit Point";
     detailsButton.innerText = "View Details"
     editButton.classList.add("btn", "btn-primary", "custom-close", "popup-button");
+    editButton.style.marginLeft = "10px";
+    editButton.addEventListener('click', function() {
+      trans.setActive(true);
+      $(popup.getElement()).popover('destroy');
+    });
     detailsButton.classList.add("btn", "btn-primary", "custom-details", "popup-button")
-    detailsButton.style.marginRight = "10px";
+    detailsButton.style.marginLeft = "10px";
 
     const PDFButton = document.createElement("button");
     PDFButton.setAttribute("id", "pdf-btn-text");
     PDFButton.innerHTML = '<span class="glyphicon glyphicon-floppy-save"></span><span id="csv-btn-text" > Save .pdf</span>'
     PDFButton.classList.add("btn", "btn-primary", "custom-details", "popup-button")
-    PDFButton.style.marginRight = "10px";
     detailsButton.addEventListener('click', function() {
       location.href = "/apps/ol-test/details/" + hylak_id + "/";
     });
@@ -835,7 +794,7 @@ $(function() {
 
       // adding the buttons to the popup footer
       const fut = document.getElementsByClassName("popover-footer")[0];
-      fut.append(editButton);
+      if (editable) fut.append(editButton);
       fut.append(detailsButton);
       fut.append(PDFButton);
 
@@ -843,15 +802,6 @@ $(function() {
       span3.innerText = "PDF Zoom Level: ";
       fut.append(span3)
       fut.append(zoomSel);
-
-      function close(e) { // need to have a function to both add and remove it
-        if (e.target.classList.contains('custom-close')) {
-          trans.setActive(true);
-          $(popup.getElement()).popover('destroy');
-          fut.removeEventListener('click', close);
-        }
-      }
-      fut.addEventListener('click', close);
     }, 250); 
   }
 
@@ -945,34 +895,36 @@ $(function() {
   // updates coordinates if Hylak_id is already in the ID array
   var changed_points = 0;
   trans.on("translateend", function(e) {
-    if (e.features.item(0).getId() == undefined)
-      return;
+    // console.log(select.getFeatures().item(0));
+    // console.log(e.features.item(0));
+    let selected_feature = e.features.item(0);
+    let clust = false;
+    if (selected_feature.getId() == undefined) {
+      selected_feature = selected_feature.getProperties()['features'][0];
+      clust = true;
+    }
     changed_points++;
-    let featID = e.features.item(0).getProperties()['Hylak_id'];
+    let featID = selected_feature.getProperties()['Hylak_id'];
     let coords = ol.proj.toLonLat(e.coordinate);
     document.getElementById("save-num").innerHTML = " (" + changed_points + ")";
+    if (clust)
+      vecSource.getFeatureById(featID).getGeometry().setCoordinates(ol.proj.fromLonLat(coords));
 
     // putting the changed point into a json
-    var data = [];
-    data.push({
+    var data = {
       "Hylak_id": featID,
       "coordLon": coords[0],
       "coordLat": coords[1]
-      });
-
-    // post request, not entirely sure what it all does
-    // when i tried to do my own thing i got an ASGIRequest in python
-    // don't know how to use those
-    fetch('/apps/ol-test/update_feats/', {
-        method: "POST",
-        credentials: 'same-origin',
-        headers:{
-          'Accept': 'application/json',
-          'X-Requested-With': 'XMLHttpRequest',
-          'X-CSRFToken': csrftoken,
-        },
-        body: JSON.stringify(data),
-      });
+      };
+    
+    console.log(data);
+    
+    $.ajax({
+      url: '/apps/ol-test/update_feats/',
+      method: "POST",
+      data: data,
+    })
+    cleanse();
   });
 
   // forces a resize event when the graph modal shows up

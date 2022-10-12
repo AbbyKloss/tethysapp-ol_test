@@ -76,7 +76,7 @@ class OlTest(TethysAppBase):
             ),
             UrlMap(
                 name='pdf_ajax',
-                url='ol-test/pdf/ajax/',
+                url='ol-test/pdf/ajax',
                 controller='ol_test.controllers.pdf_ajax'
             ),
         )

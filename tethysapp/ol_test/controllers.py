@@ -120,14 +120,15 @@ def update_feats(request):
     """
     Updates the coordinates of specific features based on an HttpRequest
     """
+    if (request.method != "POST"):
+        return HttpResponse(status = 400)
     Session = app.get_persistent_store_database('primary_db', as_sessionmaker=True)
     session = Session()
 
-    data = json.load(request)
-    for item in data:
-        station = session.query(Station).filter_by(Hylak_id=item['Hylak_id']).first()
-        station.coordLon = item['coordLon']
-        station.coordLat = item['coordLat']
+    data = request.POST.dict()
+    station = session.query(Station).filter_by(Hylak_id=data['Hylak_id']).first()
+    station.coordLon = data['coordLon']
+    station.coordLat = data['coordLat']
 
     session.commit()
     session.close()
@@ -138,20 +139,6 @@ def details(request, station_id):
     """
     Controller for the Details Page
     """
-    # print(request)
-    # timespans = ["total", "yearly", "monthly", "daily"]
-    # hydrographs = []
-    # bytestreams = []
-    # filename = "HydroLakes/HydroLakes_polys_v10_10km2_global_results_dswe.csv"
-    # for span in timespans:
-    #     hydrograph = create_hydrograph(hylakID=station_id, filename=filename, timespan=span, heightIn=inch*5.25)
-    #     hydrographs.append(hydrograph[0])
-        # bytestreams.append(hydrograph[1])
-
-    # pdf = createPDF(hylak_id=station_id, graphs=bytestreams)
-    # pdf.seek(0)
-    # readpdf = base64.b64encode(pdf.read())
-    # decodedStr = f"data:application/pdf;base64,{readpdf.decode('utf8')}"
 
 
     session = app.get_persistent_store_database('primary_db', as_sessionmaker=True)()
@@ -226,14 +213,14 @@ def details(request, station_id):
 
 def download_station_csv(request):
     print("download_station_csv")
-    if (request.method != "POST"):
+    if (request.method != "GET"):
         print(request.method)
         return HttpResponse(status = 400)
-    post = request.POST.dict()
+    get = request.GET.dict()
     station_id = ""
 
     try:
-        station_id = post['hylak_id']
+        station_id = get['hylak_id']
     except (KeyError, ValueError) as e:
         print(e)
         return HttpResponse(status = 400)
@@ -248,7 +235,7 @@ def download_station_csv(request):
     return response
 
 def pdf_ajax(request):
-    # print("pdf_ajax")
+    print("pdf_ajax")
     if (request.method != "POST"):
         print(request.method)
         return HttpResponse(status = 400)
