@@ -29,6 +29,8 @@ def load_GJSON(request):
     # testHelper = choice(stations)
     # attributes = inspect.getmembers(testHelper, lambda a:not(inspect.isroutine(a)))
     # print([a for a in attributes if not((a[0].startswith('__') and a[0].endswith('__')) or a[0].startswith('_sa') or (a[0] == 'metadata') or (a[0] == 'registry'))])
+    minVol = 0
+    maxVol = 0
 
     # Define GeoJSON Features
     for station in stations:
@@ -65,12 +67,25 @@ def load_GJSON(request):
             }            
         }
         features.append(station_feature)
+        # print(station.Vol_total)
+        # if (station.Vol_total == None):
+        #     curVol = minVol
+        # else:
+        #     curVol = float(station.Vol_total)
+        # if (maxVol == 0):
+        #     minVol = maxVol = curVol
+        # if (maxVol < curVol):
+        #     maxVol = curVol
+        # if (minVol > curVol):
+        #     minVol = curVol
     
     
     response = {'type': 'FeatureCollection',
                 'features': features
                 }
     
+    print(f"minVol: {minVol} | maxVol: {maxVol}")
+
     return JsonResponse(response, safe=False)
 
 

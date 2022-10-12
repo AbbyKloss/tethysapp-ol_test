@@ -117,7 +117,7 @@ input[type=range] {
 #background-select{
     top: 10px;
     left: 3em;
-    background:#000;
+    background: rgba(255, 255, 255, 50%);
     overflow-y: visible;
 }
 
@@ -134,4 +134,32 @@ input[type=range] {
 #map2 {
     width: 378px;
     height: 378px;
+}
+
+.controller-number {
+    width: 45%;
+    float: left;
+    padding-right: 0px;
+    background: #bbb;
+}
+
+.controller-text {
+    width: 80px;
+    float: left;
+    background: #aaa;
+}
+
+.ol-mouse-position {
+    left: 3.1em;
+    top: 2.7em;
+    background: rgba(255, 255, 255, 50%);
+    width: 8.4em;
+    border-radius: 4px;
+}
+
+#mouse-position-text {
+    color: #000;
+    font-family: Arial, sans-serif;
+    font-size: 16px;
+    padding: 5px;
 }

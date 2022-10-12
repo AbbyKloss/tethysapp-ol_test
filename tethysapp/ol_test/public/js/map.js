@@ -81,21 +81,52 @@ $(function() {
 
   // function for vecSource's features
   function dynamicStyle(feat) {
-    area = feat.get('Lake_area');
-    value = number.value;
-    col = '#5118ad';
+    let area = feat.get('Lake_area');
+    let type = feat.get('Lake_type');
+    let size = feat.get('Vol_total');
+    let value = number.value;
+    let col = '#5118ad';
+    let img = undefined;
+    let radius = 5;
+
+    // Color definition
     if ((area != null) && (area < value)) col = '#b01944';
     else if ((area != null) && (area >= value)) col = '#73e69f';
-    return new ol.style.Style({
-      image: new ol.style.Circle({
+
+    // Size definition
+    if (size != "None") {
+      radius = radius - (Math.log2(7.7) / 3) + (Math.log2(parseFloat(size) / 3));
+      if (radius > 10)
+        radius = 10;
+    }
+
+    // Shape definition
+    if (type == 1) {
+      img = new ol.style.Circle({
         stroke: new ol.style.Stroke({
           color: '#000'
         }),
         fill: new ol.style.Fill({
           color: col
         }),
-        radius: 5,
-      }),
+        radius: radius,
+      });
+    } else {
+      img = new ol.style.RegularShape({
+        stroke: new ol.style.Stroke({
+          color: '#000'
+        }),
+        fill: new ol.style.Fill({
+          color: col
+        }),
+        radius: radius,
+        points: type + 1,
+        rotation: ((type % 2) * (Math.PI / 4)) // if odd, rotate 45 degrees
+      });
+    }
+
+    return new ol.style.Style({
+      image: img,
       text: new ol.style.Text({
         offsetY: 10,
         text: feat.getProperties()['Hylak_id'].toString(),
@@ -217,18 +248,44 @@ $(function() {
     }
 
     selector.addEventListener('change', changeMapSource, false);
-    var element = document.createElement('div');
-    element.className = 'select-bg ol-unselectable ol-control';
-    element.setAttribute('id', 'background-select');
-    element.append(selector);
+    var container = document.createElement('div');
+    container.className = 'select-bg ol-unselectable ol-control';
+    container.setAttribute('id', 'background-select');
+    container.append(selector);
+    container.append(document.createElement("br"));
+    // var span1 = document.createElement("span");
+    // var span2 = document.createElement("span");
+    // span1.innerText = "Latitude = ";
+    // span2.innerText = "Longitude = ";
+    // span1.classList.add("controller-text");
+    // span2.classList.add("controller-text");
+    // let spanStyle = "color: #fff"
+    // span1.style = spanStyle;
+    // span2.style = spanStyle;
+    // var latitude = document.createElement("input");
+    // var longitude = document.createElement("input");
+    // latitude.classList.add("controller-number");
+    // longitude.classList.add("controller-number");
+    // latitude.setAttribute("type", "number");
+    // longitude.setAttribute("type", "number");
+    // container.append(span1);
+    // container.append(latitude);
+    // container.append(document.createElement("br"));
+    // container.append(span2);
+    // container.append(longitude);
 
 
     ol.control.Control.call(this, {
-      element: element,
+      element: container,
       target: options.target
     });
   };
   ol.inherits(app.selectControl, ol.control.Control);
+
+  function controlPadding(coords) {
+    console.log(document.getElementsByClassName('ol-mouse-position')[0])
+    return ol.coordinate.format(coords, '<div id="mouse-position-text">Lat:&nbsp;&nbsp;{y}<br>Lon:&nbsp;{x}</div>', 4);
+  }
 
   // classic map declaration
   // with a control twist
@@ -239,6 +296,10 @@ $(function() {
     controls: ol.control.defaults().extend([
       new app.selectControl(),
       new ol.control.ScaleLine(),
+      new ol.control.MousePosition({
+        projection: "EPSG:4326",
+        coordinateFormat: controlPadding,
+      }),
     ]),
     
   });
@@ -726,7 +787,7 @@ $(function() {
       popup.setPosition(coordinates);
       
       $(popup_element).popover({
-        'placement': 'top',
+        'placement': 'auto top',
         'animation': true,
         'html': true,
         'title': " ",

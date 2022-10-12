@@ -13,6 +13,8 @@ def randColor(static=0) -> str:
         colString = '#87DCBB'
     elif (static == 4): # darker pink
         colString = '#D48B96'
+    elif (static == 5): # banan
+        colString = '#EFEB1B'
     else:               # random generation
         r = lambda: randint(0,255)
         colString = '#%02X%02X%02X' % (r(),r(),r())
@@ -29,7 +31,7 @@ class OlTest(TethysAppBase):
     icon = 'ol_test/images/icon.gif'
     package = 'ol_test'
     root_url = 'ol-test'
-    color = randColor()
+    color = randColor(5)
     description = ''
     tags = ''
     enable_feedback = False
