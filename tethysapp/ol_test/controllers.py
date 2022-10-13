@@ -235,7 +235,6 @@ def download_station_csv(request):
     return response
 
 def pdf_ajax(request):
-    print("pdf_ajax")
     if (request.method != "POST"):
         print(request.method)
         return HttpResponse(status = 400)

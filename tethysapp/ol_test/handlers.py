@@ -44,6 +44,7 @@ def create_hydrograph(hylakID: str, filename: str, timespan="total", heightIn='5
     name = ""
     time = []
     flow = []
+    plot_data = []
     
     # manipulate data if necessary
     # make all the data easy for plotly to read
@@ -62,7 +63,6 @@ def create_hydrograph(hylakID: str, filename: str, timespan="total", heightIn='5
             "y": gb.max()[hylakID].to_list(),
             "line": {'color': '#bc5090', 'width': 4, 'shape':'spline'},
             "name": "max",
-            # "stackgroup": "extremes"
             "fill": "tonexty"
         }
 
@@ -71,7 +71,6 @@ def create_hydrograph(hylakID: str, filename: str, timespan="total", heightIn='5
             "y": gb.agg(lambda x: x.mean() + x.std())[hylakID].to_list(),
             "line": {'color': '#ffa600', 'width': 4, 'shape':'spline'},
             "name": "+σ",
-            # "stackgroup": "std_dev"
             "fill": "tonexty"
         }
 
@@ -81,7 +80,7 @@ def create_hydrograph(hylakID: str, filename: str, timespan="total", heightIn='5
             "line": {'color': '#003f5c', 'width': 4, 'shape':'spline'}, # 0080ff
             "name": "mean",
             "fill": "tonexty",
-            "fillcolor": 'rgba(255, 166, 0, 0.5)'
+            "fillcolor": 'rgba(255, 166, 0, 0.5)' # same color as below posStdv
         }
 
         negStdvDict = {
@@ -89,9 +88,8 @@ def create_hydrograph(hylakID: str, filename: str, timespan="total", heightIn='5
             "y": gb.agg(lambda x: x.mean() - x.std())[hylakID].to_list(),
             "line": {'color': '#ffa600', 'width': 4, 'shape':'spline'},
             "name": "-σ",
-            # "stackgroup": "std_dev"
             "fill": "tonexty",
-            "fillcolor": 'rgba(188, 80, 144, 0.5)'
+            "fillcolor": 'rgba(188, 80, 144, 0.5)' # same color as below maxDict
         }
 
         minDict = {
@@ -99,12 +97,10 @@ def create_hydrograph(hylakID: str, filename: str, timespan="total", heightIn='5
             "y": gb.min()[hylakID].to_list(),
             "line": {'color': '#bc5090', 'width': 4, 'shape':'spline'},
             "name": "min",
-            # "stackgroup": "extremes"
+            # no fill here, the functions are weird and make it hard to fill upwards
         }
 
         itemList = [maxDict, posStdvDict, meanDict, negStdvDict, minDict]
-
-        plot_data = []
 
         for item in reversed(itemList):
             hydrograph_go = go.Scatter(**item)
@@ -121,18 +117,11 @@ def create_hydrograph(hylakID: str, filename: str, timespan="total", heightIn='5
         time = sorted([datetime.strptime(dt, "%m") for dt in time])
         time = [dt.strftime("%b") for dt in time]
 
-        # max = gb.max()
-        # posStdv = gb.agg(lambda x: x.mean() + x.std())
-        # mean = gb.mean()
-        # negStdv = gb.agg(lambda x: x.mean() - x.std())
-        # min = gb.min()
-
         maxDict = {
             "x": time,
             "y": gb.max()[hylakID].to_list(),
             "line": {'color': '#bc5090', 'width': 4, 'shape':'spline'},
             "name": "max",
-            # "stackgroup": "extremes"
             "fill": "tonexty"
         }
 
@@ -141,7 +130,6 @@ def create_hydrograph(hylakID: str, filename: str, timespan="total", heightIn='5
             "y": gb.agg(lambda x: x.mean() + x.std())[hylakID].to_list(),
             "line": {'color': '#ffa600', 'width': 4, 'shape':'spline'},
             "name": "+σ",
-            # "stackgroup": "std_dev"
             "fill": "tonexty"
         }
 
@@ -159,7 +147,6 @@ def create_hydrograph(hylakID: str, filename: str, timespan="total", heightIn='5
             "y": gb.agg(lambda x: x.mean() - x.std())[hylakID].to_list(),
             "line": {'color': '#ffa600', 'width': 4, 'shape':'spline'},
             "name": "-σ",
-            # "stackgroup": "std_dev"
             "fill": "tonexty",
             "fillcolor": 'rgba(188, 80, 144, 0.5)'
         }
@@ -169,12 +156,9 @@ def create_hydrograph(hylakID: str, filename: str, timespan="total", heightIn='5
             "y": gb.min()[hylakID].to_list(),
             "line": {'color': '#bc5090', 'width': 4, 'shape':'spline'},
             "name": "min",
-            # "stackgroup": "extremes"
         }
 
         itemList = [maxDict, posStdvDict, meanDict, negStdvDict, minDict]
-
-        plot_data = []
 
         for item in reversed(itemList):
             hydrograph_go = go.Scatter(**item)
@@ -197,7 +181,6 @@ def create_hydrograph(hylakID: str, filename: str, timespan="total", heightIn='5
             "y": gb.max()[hylakID].to_list(),
             "line": {'color': '#bc5090', 'width': 4, 'shape':'spline'},
             "name": "max",
-            # "stackgroup": "extremes"
             "fill": "tonexty"
         }
 
@@ -206,7 +189,6 @@ def create_hydrograph(hylakID: str, filename: str, timespan="total", heightIn='5
             "y": gb.agg(lambda x: x.mean() + x.std())[hylakID].to_list(),
             "line": {'color': '#ffa600', 'width': 4, 'shape':'spline'},
             "name": "+σ",
-            # "stackgroup": "std_dev"
             "fill": "tonexty"
         }
 
@@ -224,7 +206,6 @@ def create_hydrograph(hylakID: str, filename: str, timespan="total", heightIn='5
             "y": gb.agg(lambda x: x.mean() - x.std())[hylakID].to_list(),
             "line": {'color': '#ffa600', 'width': 4, 'shape':'spline'},
             "name": "-σ",
-            # "stackgroup": "std_dev"
             "fill": "tonexty",
             "fillcolor": 'rgba(188, 80, 144, 0.5)'
         }
@@ -234,12 +215,9 @@ def create_hydrograph(hylakID: str, filename: str, timespan="total", heightIn='5
             "y": gb.min()[hylakID].to_list(),
             "line": {'color': '#bc5090', 'width': 4, 'shape':'spline'},
             "name": "min",
-            # "stackgroup": "extremes"
         }
 
         itemList = [maxDict, posStdvDict, meanDict, negStdvDict, minDict]
-
-        plot_data = []
 
         for item in reversed(itemList):
             hydrograph_go = go.Scatter(**item)
@@ -250,20 +228,17 @@ def create_hydrograph(hylakID: str, filename: str, timespan="total", heightIn='5
         time = df["Dates"].astype(str).to_list()
         flow = df[hylakID].to_list()
 
-        hydrograph_go = go.Scatter(
-            x=time,
-            y=flow,
-            name=name,
-            line={'color': '#003f5c', 'width': 4, 'shape':'spline'}, # #0080ff
-        )
+        simpleDict = {
+            "x": time,
+            "y": flow,
+            "name": name,
+            "line": {'color': '#003f5c', 'width': 4, 'shape':'spline'}, # #0080ff
+        }
 
+        hydrograph_go = go.Scatter(**simpleDict)
         plot_data = [hydrograph_go]
     
     del df
-    
-    # Build up Plotly plot
-    
-
 
     layout = {
         'title':  name,
@@ -300,6 +275,36 @@ def createCSV(hylakID: str, filename: str) -> str:
 
     return outputString
 
+def wordWrap(instr: str, maxLen: int) -> list:
+    '''
+    Splits the given string into a list of strings containing unbroken words with each string having a lower len than the given length.
+    Example usage: wordWrap("A Lengthy Example String To Demonstrate", 10) -> ['A Lengthy', 'Example', 'String To', 'Demonstrate']
+    '''
+    strA = instr
+    strB = ""
+    strLstA = []
+    strLstB = []
+    BigList = []
+    while (len(strA) > maxLen):
+        # print(len(strA))
+        strLstA = strA.split(" ")
+        strLstB.insert(0, strLstA.pop())
+        strA = " ".join(strLstA)
+        strB = " ".join(strLstB)
+
+    if (len(strB) > maxLen):
+        BigList.append(strA)
+        try:
+            result = wordWrap(strB, maxLen)
+            for item in result:
+                if (item == ''):
+                    continue
+                BigList.append(item)
+        except RecursionError:
+            return [strB]
+    else:
+        BigList = [strA, strB]
+    return BigList
 
 def createPDF (hylak_id: int, img: BytesIO) -> BytesIO:
     # making sure input is fine
@@ -357,23 +362,35 @@ def createPDF (hylak_id: int, img: BytesIO) -> BytesIO:
         ["Slope 100", station.Slope_100],
     ]
 
-    setlist = [["Location:", location_set], ["Size:", size_set], ["Misc:",misc_set]]
+    setlist = [["Location:", location_set], ["Size:", size_set], ["Misc:", misc_set]]
 
     cursorX = 30
     curCursor = 0
     diff = 0
-    for content in setlist:
+    maxStrLen = 30
+    for title, content in setlist:
         diff = height - cursorY
-        canv.drawString(cursorX, cursorY, content[0])
+        canv.drawString(cursorX, cursorY, title)
         cursorY -= 15
         curCursor = cursorY
-        for item in content[1]:
-            canv.drawString(cursorX, cursorY, f"{item[0]}: {item[1]}")
-            cursorY -= 15
+        cursorX += 15
+        for item in content:
+            curstr = f"{item[0]}: {item[1]}"
+            if (len(curstr) > maxStrLen): # if the string is too long, word wrap it
+                splitList = wordWrap(curstr, maxStrLen)
+                canv.drawString(cursorX, cursorY, splitList[0])
+                cursorY -= 15
+                for item in splitList[1:]:
+                    canv.drawString(cursorX + 15, cursorY, item)
+                    cursorY -= 15
+            else:
+                canv.drawString(cursorX, cursorY, curstr)
+                cursorY -= 15
             curCursor = cursorY
         cursorY -= 30
-        if (setlist.index(content) % 2):
+        if (cursorX != 45):
             cursorX = 30
+            cursorY -= 15
         else:
             cursorY = height - diff
             cursorX = width // 2
