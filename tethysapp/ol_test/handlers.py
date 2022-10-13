@@ -1,5 +1,6 @@
 # import csv
 import pandas as pd
+import numpy as np
 from plotly import graph_objs as go
 from datetime import datetime
 from tethys_gizmos.gizmo_options import PlotlyView
@@ -8,13 +9,10 @@ from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.utils import ImageReader
 from reportlab.lib.units import inch
-from reportlab.pdfbase import pdfmetrics
-from reportlab.pdfbase.ttfonts import TTFont
-from PIL import Image
+from PIL import Image, ImageColor
 from .app import OlTest as app
 from .helpers import get_workspace
 from .model import Station
-import os
 
 # an attempt to somewhat speed up the details page and creation of pdfs
 # saves 4-5s when used well
@@ -53,54 +51,219 @@ def create_hydrograph(hylakID: str, filename: str, timespan="total", heightIn='5
         name = f"Daily Hydrograph for {hylakID}"
         df["Dates"] = pd.to_datetime(df["Dates"], format="%Y-%m-%d").dt.strftime("%j")
 
-        gb = df.groupby(["Dates"]).mean()
+        gb = df.groupby(["Dates"])
 
-        flow = gb[hylakID].to_list()
         time = list(set(df["Dates"].to_list()))
-        
         time = sorted([datetime.strptime(dt, "%j") for dt in time])
         time = [dt.strftime("%b-%d") for dt in time]
+
+        maxDict = {
+            "x": time,
+            "y": gb.max()[hylakID].to_list(),
+            "line": {'color': '#bc5090', 'width': 4, 'shape':'spline'},
+            "name": "max",
+            # "stackgroup": "extremes"
+            "fill": "tonexty"
+        }
+
+        posStdvDict = {
+            "x": time,
+            "y": gb.agg(lambda x: x.mean() + x.std())[hylakID].to_list(),
+            "line": {'color': '#ffa600', 'width': 4, 'shape':'spline'},
+            "name": "+σ",
+            # "stackgroup": "std_dev"
+            "fill": "tonexty"
+        }
+
+        meanDict = {
+            "x": time,
+            "y": gb.mean()[hylakID].to_list(),
+            "line": {'color': '#003f5c', 'width': 4, 'shape':'spline'}, # 0080ff
+            "name": "mean",
+            "fill": "tonexty",
+            "fillcolor": 'rgba(255, 166, 0, 0.5)'
+        }
+
+        negStdvDict = {
+            "x": time,
+            "y": gb.agg(lambda x: x.mean() - x.std())[hylakID].to_list(),
+            "line": {'color': '#ffa600', 'width': 4, 'shape':'spline'},
+            "name": "-σ",
+            # "stackgroup": "std_dev"
+            "fill": "tonexty",
+            "fillcolor": 'rgba(188, 80, 144, 0.5)'
+        }
+
+        minDict = {
+            "x": time,
+            "y": gb.min()[hylakID].to_list(),
+            "line": {'color': '#bc5090', 'width': 4, 'shape':'spline'},
+            "name": "min",
+            # "stackgroup": "extremes"
+        }
+
+        itemList = [maxDict, posStdvDict, meanDict, negStdvDict, minDict]
+
+        plot_data = []
+
+        for item in reversed(itemList):
+            hydrograph_go = go.Scatter(**item)
+            plot_data.append(hydrograph_go)
+        
 
     elif timespan == "monthly":
         name = f"Monthly Hydrograph for {hylakID}"
         df["Dates"] = pd.to_datetime(df["Dates"], format="%Y-%m-%d").dt.strftime("%m")
 
-        gb = df.groupby(["Dates"]).mean()
+        gb = df.groupby(["Dates"])
 
-        flow = gb[hylakID].to_list()
         time = list(set(df["Dates"].to_list()))
-
         time = sorted([datetime.strptime(dt, "%m") for dt in time])
         time = [dt.strftime("%b") for dt in time]
+
+        # max = gb.max()
+        # posStdv = gb.agg(lambda x: x.mean() + x.std())
+        # mean = gb.mean()
+        # negStdv = gb.agg(lambda x: x.mean() - x.std())
+        # min = gb.min()
+
+        maxDict = {
+            "x": time,
+            "y": gb.max()[hylakID].to_list(),
+            "line": {'color': '#bc5090', 'width': 4, 'shape':'spline'},
+            "name": "max",
+            # "stackgroup": "extremes"
+            "fill": "tonexty"
+        }
+
+        posStdvDict = {
+            "x": time,
+            "y": gb.agg(lambda x: x.mean() + x.std())[hylakID].to_list(),
+            "line": {'color': '#ffa600', 'width': 4, 'shape':'spline'},
+            "name": "+σ",
+            # "stackgroup": "std_dev"
+            "fill": "tonexty"
+        }
+
+        meanDict = {
+            "x": time,
+            "y": gb.mean()[hylakID].to_list(),
+            "line": {'color': '#003f5c', 'width': 4, 'shape':'spline'}, # 0080ff
+            "name": "mean",
+            "fill": "tonexty",
+            "fillcolor": 'rgba(255, 166, 0, 0.5)'
+        }
+
+        negStdvDict = {
+            "x": time,
+            "y": gb.agg(lambda x: x.mean() - x.std())[hylakID].to_list(),
+            "line": {'color': '#ffa600', 'width': 4, 'shape':'spline'},
+            "name": "-σ",
+            # "stackgroup": "std_dev"
+            "fill": "tonexty",
+            "fillcolor": 'rgba(188, 80, 144, 0.5)'
+        }
+
+        minDict = {
+            "x": time,
+            "y": gb.min()[hylakID].to_list(),
+            "line": {'color': '#bc5090', 'width': 4, 'shape':'spline'},
+            "name": "min",
+            # "stackgroup": "extremes"
+        }
+
+        itemList = [maxDict, posStdvDict, meanDict, negStdvDict, minDict]
+
+        plot_data = []
+
+        for item in reversed(itemList):
+            hydrograph_go = go.Scatter(**item)
+            plot_data.append(hydrograph_go)
+        
+
 
     elif timespan == "yearly":
         name = f"Yearly Hydrograph for {hylakID}"
         df["Dates"] = pd.to_datetime(df["Dates"], format="%Y-%m-%d").dt.strftime("%Y")
 
-        gb = df.groupby(["Dates"]).mean()
+        gb = df.groupby(["Dates"])
 
-        flow = gb[hylakID].to_list()
         time = list(set(df["Dates"].to_list()))
-
         time = sorted([datetime.strptime(dt, "%Y") for dt in time])
         time = [dt.strftime("%Y") for dt in time]
+
+        maxDict = {
+            "x": time,
+            "y": gb.max()[hylakID].to_list(),
+            "line": {'color': '#bc5090', 'width': 4, 'shape':'spline'},
+            "name": "max",
+            # "stackgroup": "extremes"
+            "fill": "tonexty"
+        }
+
+        posStdvDict = {
+            "x": time,
+            "y": gb.agg(lambda x: x.mean() + x.std())[hylakID].to_list(),
+            "line": {'color': '#ffa600', 'width': 4, 'shape':'spline'},
+            "name": "+σ",
+            # "stackgroup": "std_dev"
+            "fill": "tonexty"
+        }
+
+        meanDict = {
+            "x": time,
+            "y": gb.mean()[hylakID].to_list(),
+            "line": {'color': '#003f5c', 'width': 4, 'shape':'spline'}, # 0080ff
+            "name": "mean",
+            "fill": "tonexty",
+            "fillcolor": 'rgba(255, 166, 0, 0.5)'
+        }
+
+        negStdvDict = {
+            "x": time,
+            "y": gb.agg(lambda x: x.mean() - x.std())[hylakID].to_list(),
+            "line": {'color': '#ffa600', 'width': 4, 'shape':'spline'},
+            "name": "-σ",
+            # "stackgroup": "std_dev"
+            "fill": "tonexty",
+            "fillcolor": 'rgba(188, 80, 144, 0.5)'
+        }
+
+        minDict = {
+            "x": time,
+            "y": gb.min()[hylakID].to_list(),
+            "line": {'color': '#bc5090', 'width': 4, 'shape':'spline'},
+            "name": "min",
+            # "stackgroup": "extremes"
+        }
+
+        itemList = [maxDict, posStdvDict, meanDict, negStdvDict, minDict]
+
+        plot_data = []
+
+        for item in reversed(itemList):
+            hydrograph_go = go.Scatter(**item)
+            plot_data.append(hydrograph_go)
 
     else:
         name = f"Hydrograph for {hylakID}"
         time = df["Dates"].astype(str).to_list()
         flow = df[hylakID].to_list()
+
+        hydrograph_go = go.Scatter(
+            x=time,
+            y=flow,
+            name=name,
+            line={'color': '#003f5c', 'width': 4, 'shape':'spline'}, # #0080ff
+        )
+
+        plot_data = [hydrograph_go]
     
     del df
     
     # Build up Plotly plot
-    hydrograph_go = go.Scatter(
-        x=time,
-        y=flow,
-        name=name,
-        line={'color': '#0080ff', 'width': 4, 'shape':'spline'},
-    )
+    
 
-    plot_data = [hydrograph_go]
 
     layout = {
         'title':  name,

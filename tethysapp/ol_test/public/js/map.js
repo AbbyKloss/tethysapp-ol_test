@@ -95,11 +95,11 @@ $(function() {
     else if ((area != null) && (area >= value)) col = '#73e69f';
 
     // Size definition
-    if (size != "None") {
+    if (size != null) {
       radius = radius - (Math.log2(7.7) / 3) + (Math.log2(parseFloat(size) / 3));
       if (radius > 10)
         radius = 10;
-    }
+    } else radius = 7.5;
 
     // Shape definition
     if (type == 1) {
@@ -270,6 +270,46 @@ $(function() {
   };
   ol.inherits(app.selectControl, ol.control.Control);
 
+  // a legend so you can tell what all the shapes and colors mean
+  app.legend = function(opt_options) {
+    var options = opt_options || {};
+
+    var container = document.createElement("div");
+    container.className = "ol-legend ol-unselectable ol-control";
+    // overly complicated, but more flexible if i need to add things later
+    let svg1 = `<svg width="25" height="25">
+                    <circle cx="50%" cy="75%" r="5" fill="#73e69f" stroke="black"/>
+                  </svg><span>- Lake Area ≥ </span><span class="slider-text">Slider</span><br>`;
+    let svg2 = `<svg width="25" height="25">
+                  <circle cx="50%" cy="75%" r="5" fill="#b01944" stroke="black"/>
+                </svg><span>- Lake Area < </span><span class="slider-text">Slider</span><br>`;
+    let svg3 = `<svg width="25" height="25">
+                  <circle cx="50%" cy="75%" r="5" fill="#5118ad" stroke="black"/>
+                </svg><span>- Lake Area = null</span><br>`;
+    let svg4 = `<svg width="25" height="25">
+                  <circle cx="50%" cy="75%" r="5" fill="#73e69f" stroke="black"/>
+                </svg><span>- Lake Type = 1</span><br>`;
+    let svg5 = `<svg width="25" height="25">
+                  <polygon points="6,24 12.5,11, 20,24" fill="#73e69f" stroke="black"/>
+                </svg><span>- Lake Type = 2</span><br>`;
+    let svg6 = `<svg width="25" height="25">
+                  <rect x="30%" y="50%" rx="2" width="10" height="10" fill="#73e69f" stroke="black"/>
+                </svg><span>- Lake Type = 3</span><br>`;
+    const svgList = [svg1, svg2, svg3, svg4, svg5, svg6];
+    for (let i = 0; i < svgList.length; i++) {
+      let SVGHolder = document.createElement("svg");
+      SVGHolder.innerHTML = svgList[i];
+
+      container.append(SVGHolder);
+    }
+
+    ol.control.Control.call(this, {
+      element: container,
+      target: options.target
+    });
+  };
+  ol.inherits(app.legend, ol.control.Control);
+
   function controlPadding(coords) {
     return ol.coordinate.format(coords, '<div id="mouse-position-text">Lat:&nbsp;&nbsp;{y}<br>Lon:&nbsp;{x}</div>', 4);
   }
@@ -287,6 +327,7 @@ $(function() {
         projection: "EPSG:4326",
         coordinateFormat: controlPadding,
       }),
+      new app.legend(),
     ]),
     
   });
@@ -421,22 +462,28 @@ $(function() {
     map.addControl(new ol.control.ZoomToExtent({"extent": extent, "label": "R"}));
   });
 
+  const sliderText = [...document.getElementsByClassName('slider-text')];
+  sliderText.forEach(element => element.innerText = realSliderVal().toString());
+
   // many many event listeners to update everything that needs to be
   eslider.addEventListener('input', function() {
     number.value = realSliderVal();
     lslider.value = number.value;
+    sliderText.forEach(element => element.innerText = number.value.toString());
     vector.changed();
   });
 
   number.addEventListener('input', function() {
     eslider.value = numValtoSliderVal();
     lslider.value = number.value;
+    sliderText.forEach(element => element.innerText = number.value.toString());
     vector.changed();
   });
 
   lslider.addEventListener('input', function() {
     number.value = lslider.value;
     eslider.value = numValtoSliderVal();
+    sliderText.forEach(element => element.innerText = number.value.toString());
     vector.changed();
   });
 
@@ -545,10 +592,6 @@ $(function() {
   map2Layer.getSource().on(["tileloadend", "tileloaderror"], function() {
     map2AddLoaded();
   })
-
-  // bookkeeping for moving features
-  const changed_ids = [];
-  const changed_coords = [];
   
   // bookkeeping for popups
   var PU = true;
@@ -633,7 +676,6 @@ $(function() {
     graph_button.innerHTML = " (1)";
     
     // popup setup
-    let popup_header = '';
     var popup_element = popup.getElement();
     let hylak_id = selected_feature.getProperties()['Hylak_id'];
     let area = selected_feature.get('Lake_area')
@@ -740,14 +782,16 @@ $(function() {
     /****** end of button setup (kind of, actually putting them in the popup is later) ******/
 
     // display the ID and the area, if it exists, in the popup header
-    if (area != null) {
-      popup_header = `ID: ${hylak_id} | Area: ${area}`;
-      graph_header.innerHTML = `ID: ${hylak_id} | Area: ${area}`;
-    }
-    else {
-      popup_header = `ID: ${hylak_id}`;
-      graph_header.innerHTML = `ID: ${hylak_id}`;
-    }
+    // console.log(area);
+    // console.log(typeof area)
+    // if (area != null) {
+    //   popup_header = `ID: ${hylak_id} | Area: ${area}`;
+    //   graph_header.innerHTML = `ID: ${hylak_id} | Area: ${area}`;
+    // }
+    // else {
+    //   popup_header = `ID: ${hylak_id}`;
+    //   graph_header.innerHTML = `ID: ${hylak_id}`;
+    // }
 
       
     // placeholder text to show that the popup isn't broken, just taking a sec, followed by the graphs
@@ -817,8 +861,10 @@ $(function() {
       span1.innerText = "ID: ";
       hed.append(span1);
       hed.append(selector);
-      span2.innerText = ` | Area: ${area}`;
-      hed.append(span2);
+      if (area != null) {
+        span2.innerText = ` | Area: ${area}`;
+        hed.append(span2);
+      }
 
       // adding the buttons to the popup footer
       const fut = document.getElementsByClassName("popover-footer")[0];

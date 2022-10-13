@@ -31,7 +31,7 @@ class OlTest(TethysAppBase):
     icon = 'ol_test/images/icon.gif'
     package = 'ol_test'
     root_url = 'ol-test'
-    color = randColor(5)
+    color = randColor()
     description = ''
     tags = ''
     enable_feedback = False
