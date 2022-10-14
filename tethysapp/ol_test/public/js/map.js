@@ -91,7 +91,8 @@ $(function() {
   //   return cookieValue;
   // }
   // const csrftoken = getCookie('csrftoken');
-  const xcsrftoken = document.getElementsByName("csrfmiddlewaretoken")[0].value
+  const xcsrftoken = document.getElementsByName("csrfmiddlewaretoken")[0].value;
+  $("input[name='csrfmiddlewaretoken']").remove();
   // console.log(document.cookie)
   // console.log(csrftoken);
   console.log(xcsrftoken);
@@ -542,13 +543,14 @@ $(function() {
           url:'/apps/ol-test/pdf/ajax/',
           method: 'POST',
           // headers: {"X-CSRFToken": csrftoken},
-          // headers: {"X-CSRFToken": xcsrftoken},
+          headers: {"X-CSRFToken": xcsrftoken},
           beforeSend: function (xhr) {
               xhr.setRequestHeader("X-CSRFToken", xcsrftoken)
           },
           data: {
-              'hylak_id': glob_hylak_id,
-              'map_blob': url,
+            'csrfmiddlewaretoken': xcsrftoken,
+            'hylak_id': glob_hylak_id,
+            'map_blob': url,
           },
           success: function (data) {
             let btntext = document.getElementById("pdf-btn-text");
@@ -1012,6 +1014,7 @@ $(function() {
 
     // putting the changed point into a json
     var data = {
+      'csrfmiddlewaretoken': xcsrftoken,
       "Hylak_id": featID,
       "coordLon": coords[0],
       "coordLat": coords[1]
@@ -1023,7 +1026,7 @@ $(function() {
       url: '/apps/ol-test/update_feats/',
       method: "POST",
       // headers: {"X-CSRFToken": csrftoken},
-      // headers: {"X-CSRFToken": xcsrftoken},
+      headers: {"X-CSRFToken": xcsrftoken},
       beforeSend: function (xhr) {
           xhr.setRequestHeader("X-CSRFToken", xcsrftoken)
       },
