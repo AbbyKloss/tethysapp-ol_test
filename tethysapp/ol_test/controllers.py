@@ -2,6 +2,7 @@ import json
 from .handlers import create_hydrograph, createCSV, createPDF
 from django.shortcuts import render
 from django.http import HttpResponse, JsonResponse, FileResponse
+from django.views.decorators.csrf import csrf_exempt, csrf_protect, ensure_csrf_cookie
 from tethys_sdk.permissions import login_required
 from .model import Station, get_all_stations
 from .app import OlTest as app
@@ -90,6 +91,7 @@ def load_GJSON(request):
 
 
 @login_required()
+@csrf_protect
 def hydrograph_ajax(request):
     """
     Controller for the Hydrograph Loaders.
@@ -115,7 +117,7 @@ def hydrograph_ajax(request):
 
     return render(request, 'ol_test/hydrograph_ajax.html', context)
 
-
+@csrf_protect
 def update_feats(request):
     """
     Updates the coordinates of specific features based on an HttpRequest
@@ -179,8 +181,6 @@ def details(request, station_id):
     # location_img = None
     # response = HttpResponse
 
-    
-
     # print(station.coordLon, station.coordLat)
 
     session.close()
@@ -234,7 +234,9 @@ def download_station_csv(request):
 
     return response
 
+@csrf_protect
 def pdf_ajax(request):
+    print(request.headers)
     if (request.method != "POST"):
         print(request.method)
         return HttpResponse(status = 400)

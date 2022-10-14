@@ -5,55 +5,76 @@ $(function() {
         crossOrigin:'anonymous',
       });
     
-      var esri_terr_source = new ol.source.XYZ({
-        attributions: [new ol.Attribution({
-          html: 'Tiles &copy; <a href="https://services.arcgisonline.com/ArcGIS/' +
-              'rest/services/World_Terrain_Base/MapServer">ArcGIS</a>'
-        })],
-        url: 'https://server.arcgisonline.com/ArcGIS/rest/services/' +
-            'World_Terrain_Base/MapServer/tile/{z}/{y}/{x}',
-            crossOrigin:'anonymous'
-      });
-    
-      var usgs_imagery_source = new ol.source.XYZ({
-        attributions: [new ol.Attribution({
-          html: 'Tiles &copy; <a href="https://basemap.nationalmap.gov/arcgis/' +
-              'rest/services/World_Imagery/MapServer">ArcGIS</a>'
-        })],
-        url: 'https://basemap.nationalmap.gov/arcgis/rest/services/' +
-            'USGSImageryOnly/MapServer/tile/{z}/{y}/{x}',
-            crossOrigin:'anonymous'
-      });
-    
-      var usgs_imagery_labels_source = new ol.source.XYZ({
-        attributions: [new ol.Attribution({
-          html: 'Tiles &copy; <a href="https://basemap.nationalmap.gov/arcgis/' +
-              'rest/services/World_Imagery/MapServer">ArcGIS</a>'
-        })],
-        url: 'https://basemap.nationalmap.gov/arcgis/rest/services/' +
-            'USGSImageryTopo/MapServer/tile/{z}/{y}/{x}',
-            crossOrigin:'anonymous'
-      });
-    
-      var esri_source = new ol.source.XYZ({
-        attributions: [new ol.Attribution({
-          html: 'Tiles &copy; <a href="https://services.arcgisonline.com/ArcGIS/' +
-              'rest/services/World_Topo_Map/MapServer">ArcGIS</a>'
-        })],
-        url: 'https://server.arcgisonline.com/ArcGIS/rest/services/' +
-            'World_Topo_Map/MapServer/tile/{z}/{y}/{x}',
-            crossOrigin:'anonymous'
-      });
-    
-      var esri_world_source = new ol.source.XYZ({
-        attributions: [new ol.Attribution({
-          html: 'Tiles &copy; <a href="https://services.arcgisonline.com/ArcGIS/' +
-              'rest/services/World_Imagery/MapServer">ArcGIS</a>'
-        })],
-        url: 'https://server.arcgisonline.com/ArcGIS/rest/services/' +
-            'World_Imagery/MapServer/tile/{z}/{y}/{x}',
-            crossOrigin:'anonymous',
-      maxZoom:19});
+    var esri_terr_source = new ol.source.XYZ({
+    attributions: [new ol.Attribution({
+        html: 'Tiles &copy; <a href="https://services.arcgisonline.com/ArcGIS/' +
+            'rest/services/World_Terrain_Base/MapServer">ArcGIS</a>'
+    })],
+    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/' +
+        'World_Terrain_Base/MapServer/tile/{z}/{y}/{x}',
+        crossOrigin:'anonymous'
+    });
+
+    var usgs_imagery_source = new ol.source.XYZ({
+    attributions: [new ol.Attribution({
+        html: 'Tiles &copy; <a href="https://basemap.nationalmap.gov/arcgis/' +
+            'rest/services/World_Imagery/MapServer">ArcGIS</a>'
+    })],
+    url: 'https://basemap.nationalmap.gov/arcgis/rest/services/' +
+        'USGSImageryOnly/MapServer/tile/{z}/{y}/{x}',
+        crossOrigin:'anonymous'
+    });
+
+    var usgs_imagery_labels_source = new ol.source.XYZ({
+    attributions: [new ol.Attribution({
+        html: 'Tiles &copy; <a href="https://basemap.nationalmap.gov/arcgis/' +
+            'rest/services/World_Imagery/MapServer">ArcGIS</a>'
+    })],
+    url: 'https://basemap.nationalmap.gov/arcgis/rest/services/' +
+        'USGSImageryTopo/MapServer/tile/{z}/{y}/{x}',
+        crossOrigin:'anonymous'
+    });
+
+    var esri_source = new ol.source.XYZ({
+    attributions: [new ol.Attribution({
+        html: 'Tiles &copy; <a href="https://services.arcgisonline.com/ArcGIS/' +
+            'rest/services/World_Topo_Map/MapServer">ArcGIS</a>'
+    })],
+    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/' +
+        'World_Topo_Map/MapServer/tile/{z}/{y}/{x}',
+        crossOrigin:'anonymous'
+    });
+
+    var esri_world_source = new ol.source.XYZ({
+    attributions: [new ol.Attribution({
+        html: 'Tiles &copy; <a href="https://services.arcgisonline.com/ArcGIS/' +
+            'rest/services/World_Imagery/MapServer">ArcGIS</a>'
+    })],
+    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/' +
+        'World_Imagery/MapServer/tile/{z}/{y}/{x}',
+        crossOrigin:'anonymous',
+    maxZoom:19});
+
+    // function getCookie(name) {
+    // let cookieValue = null;
+    // if (document.cookie && document.cookie !== '') {
+    //     const cookies = document.cookie.split(';');
+    //     for (let i = 0; i < cookies.length; i++) {
+    //         const cookie = cookies[i].trim();
+    //         // Does this cookie string begin with the name we want?
+    //         if (cookie.substring(0, name.length + 1) === (name + '=')) {
+    //             cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+    //             break;
+    //         }
+    //     }
+    // }
+    // return cookieValue;
+    // }
+    // const csrftoken = getCookie('csrftoken');
+    const xcsrftoken = document.getElementsByName("csrfmiddlewaretoken")[0].value
+    // console.log(document.cookie)
+    // console.log(csrftoken);
+    console.log(xcsrftoken);
 
     let urlArray = window.location.href.split("/").filter(n => n);
     let Hylak_id = parseInt(urlArray[urlArray.length - 1]);
@@ -174,6 +195,11 @@ $(function() {
             $.ajax({
                 url:'/apps/ol-test/pdf/ajax/',
                 method: 'POST',
+                // headers: {"X-CSRFToken": csrftoken},
+                // headers: {"X-CSRFToken": xcsrftoken},
+                beforeSend: function (xhr) {
+                    xhr.setRequestHeader("X-CSRFToken", xcsrftoken)
+                },
                 data: {
                     'hylak_id': Hylak_id,
                     'map_blob': url,
