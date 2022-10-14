@@ -343,21 +343,25 @@ $(function() {
     // graph loading setup
     let url = "/apps/ol-test/hydrographs/ajax/";
     let total_data = {
+        'csrfmiddlewaretoken': xcsrftoken,
         "hylak_id": Hylak_id,
         "height": graphHeight,
         "timespan": "total",
     }
     let yearly_data = {
+        'csrfmiddlewaretoken': xcsrftoken,
         "hylak_id": Hylak_id,
         "height": graphHeight,
         "timespan": "yearly",
     }
     let monthly_data = {
+        'csrfmiddlewaretoken': xcsrftoken,
         "hylak_id": Hylak_id,
         "height": graphHeight,
         "timespan": "monthly",
     }
     let daily_data = {
+        'csrfmiddlewaretoken': xcsrftoken,
         "hylak_id": Hylak_id,
         "height": graphHeight,
         "timespan": "daily",

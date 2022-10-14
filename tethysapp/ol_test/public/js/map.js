@@ -651,6 +651,7 @@ $(function() {
         let hylak_id = element.item(0).getProperties()['Hylak_id'];
         url = "/apps/ol-test/hydrographs/" + hylak_id + "/300px/ajax";
         data = {
+          'csrfmiddlewaretoken': xcsrftoken,
           "hylak_id": hylak_id,
           "height": 390,
           "width": "100%",
