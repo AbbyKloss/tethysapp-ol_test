@@ -79,6 +79,8 @@ $(function() {
   const xcsrftoken = document.getElementsByName("csrfmiddlewaretoken")[0].value;
   $("input[name='csrfmiddlewaretoken']").remove();
 
+  document.title = "OL Test | Map";
+
   // input mechanisms at the bottom of the screen, from right to left
   var eslider = document.getElementById("exponential_slider");
   var number = document.getElementById('numberInput');

@@ -82,6 +82,7 @@ $(function() {
     // get the hylak_ID from the URL, not any other way to get that on load currently
     let urlArray = window.location.href.split("/").filter(n => n);
     let Hylak_id = parseInt(urlArray[urlArray.length - 1]);
+    document.title = `OL Test | Details - ${Hylak_id}`
 
     let tablinks = document.getElementsByClassName("tablinks");
 
