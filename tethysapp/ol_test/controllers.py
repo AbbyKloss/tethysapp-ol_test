@@ -84,8 +84,6 @@ def load_GJSON(request):
     response = {'type': 'FeatureCollection',
                 'features': features
                 }
-    
-    print(f"minVol: {minVol} | maxVol: {maxVol}")
 
     return JsonResponse(response, safe=False)
 
@@ -100,22 +98,30 @@ def hydrograph_ajax(request):
         return HttpResponse(status = 400)
     
     post = request.POST.dict()
-    station_id, height, timespan = "", "", ""
+    station_id, height, timespan, mode = "", "", "", 0
     # print(post)
     try:
         station_id = post['hylak_id']
         height = post['height']
         timespan = post['timespan']
+        mode = int(post['mode'])
     except KeyError:
         return HttpResponse(status = 400)
     filename = "HydroLakes/HydroLakes_polys_v10_10km2_global_results_dswe.csv"
-    hydrograph_plot = create_hydrograph(station_id, filename, timespan=timespan, heightIn=height)[0]
+    traces = create_hydrograph(station_id, filename, timespan=timespan, heightIn=height, mode=mode)
 
-    context = {
-        'hydrograph_plot': hydrograph_plot,
-    }
+    print(f"{timespan} data sending, mode: {mode}")
 
-    return render(request, 'ol_test/hydrograph_ajax.html', context)
+    if (mode == 1):
+        context = {
+            'hydrograph_plot': traces,
+        }
+        return render(request, 'ol_test/hydrograph_ajax.html', context)
+    else:
+        context = {
+            'data': traces,
+        }
+        return JsonResponse(context)
 
 @csrf_protect
 def update_feats(request):

@@ -20,7 +20,7 @@
             <button class="tablinks" id="location">Location</button>
             <button class="tablinks" id="size">Size</button>
             <button class="tablinks" id="misc">Misc</button>
-            <button class="tablinks" id="graph-normal">Full Graph</button>
+            <button class="tablinks" id="graph-full">Full Graph</button>
             <button class="tablinks" id="graph-yearly">Yearly Average Graph</button>
             <button class="tablinks" id="graph-monthly">Monthly Average Graph</button>
             <button class="tablinks" id="graph-daily">Daily Average Graph</button>
@@ -46,6 +46,7 @@
                 </tr>
             </table>
             {% comment %} <div id="map" class="map"></div> {% endcomment %}
+            <div id="examplePlot"></div>
 
         </div>
 
@@ -79,9 +80,9 @@
             </table>
         </div>
 
-        <div id="graph-normal-content" class="tabcontent graphcontent">
-            <div id="normal-loader">Loading...</div>
-            <div id="graph-normal-plot"></div>
+        <div id="graph-full-content" class="tabcontent graphcontent">
+            <div id="full-loader">Loading...</div>
+            <div id="graph-full-plot"></div>
         </div>
 
         <div id="graph-yearly-content" class="tabcontent graphcontent">

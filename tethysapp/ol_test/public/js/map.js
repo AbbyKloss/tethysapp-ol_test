@@ -669,6 +669,31 @@ $(function() {
     PU = !PU;
   })
 
+  var glob_coords = [0,0];
+
+  function popoverPosition(popover, trigger) { // popover dimensions: 832x502, arrow dims: 20x10
+    let pixel = map.getPixelFromCoordinate(glob_coords);
+    let size = map.getSize();
+    let dims = [832 + 20, 502 + 10];
+    let retstr = "top";
+    console.log(pixel); // 1 is height, 0 is width
+    console.log(size);  // "                     "
+    if ((pixel[1] - dims[1]) >= 0) // if the popover won't be too high up...
+      retstr = "top";
+    else if ((pixel[1] + dims[1]) < size[1]) // if the popover won't be too far down...
+      retstr = "bottom";
+    else if ((pixel[0] + dims[0]) <= size[0]) // if the popover won't be too far to the right...
+      retstr = "right";
+    else if ((pixel[0] - dims[0]) > 0)  // if the popover won't be too far to the left...
+      retstr = "left";
+    console.log((pixel[1] + dims[1]), size[1]);
+    console.log((pixel[1] - dims[1]), size[1]);
+    console.log((pixel[0] + dims[0]), size[0]);
+    console.log((pixel[0] - dims[0]), size[0]);
+    console.log(retstr);
+    return retstr;
+  }
+
   function selectOne(e, feat=null, IDList=[]) {
     var selected_feature = null; // setup
     trans.setActive(false);
@@ -696,6 +721,7 @@ $(function() {
 
     // get location for popup
     var coordinates = selected_feature.getGeometry().getCoordinates();
+    glob_coords = coordinates;
 
     // unholy amounts of setup for all the things edited here
     // setup for the graph button display
@@ -741,7 +767,8 @@ $(function() {
     PDFButton.innerHTML = '<span class="glyphicon glyphicon-floppy-save"></span><span id="csv-btn-text" > Save .pdf</span>'
     PDFButton.classList.add("btn", "btn-primary", "custom-details", "popup-button")
     detailsButton.addEventListener('click', function() {
-      location.href = "/apps/ol-test/details/" + hylak_id + "/";
+      let detailURL = "/apps/ol-test/details/" + hylak_id + "/";
+      window.open(detailURL, '_blank');
     });
 
     // initializing the selectors
@@ -805,7 +832,8 @@ $(function() {
       }, 100);
     })
     $("#graph-modal-details").on('click', function() {
-      location.href = "/apps/ol-test/details/" + hylak_id + "/";
+      let detailsURL = "/apps/ol-test/details/" + hylak_id + "/";
+      window.open(detailsURL, '_blank');
     })
 
     /****** end of button setup (kind of, actually putting them in the popup is later) ******/
@@ -846,8 +874,9 @@ $(function() {
     setTimeout(function() {
       popup.setPosition(coordinates);
       
-      $(popup_element).popover({
-        'placement': 'auto top',
+      $(popup_element).popover({ // popover dimensions: 832x502
+        // 'placement': 'auto',
+        'placement': popoverPosition,
         'animation': true,
         'html': true,
         'title': " ",
@@ -861,11 +890,13 @@ $(function() {
         "hylak_id": hylak_id,
         "height": 390,
         "timespan": "total",
+        "mode": 1,
       }
       let graph_data = {
         "hylak_id": hylak_id,
         "height": Math.floor(window.innerHeight * .8),
         "timespan": "total",
+        "mode": 1,
       }
 
       $(".graph-loader").show();

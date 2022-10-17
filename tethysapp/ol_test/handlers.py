@@ -18,8 +18,9 @@ from .model import Station
 # saves 4-5s when used well
 glob_HID = 0
 glob_df = None
+# it = 0
 
-def create_hydrograph(hylakID: str, filename: str, timespan="total", heightIn='520', widthIn='100%', pdf=False, graphScale = 5.25): # -> Tuple[PlotlyView, BytesIO]:
+def create_hydrograph(hylakID: str, filename: str, timespan="total", heightIn='520', widthIn='100%', mode=0, graphScale = 5.25): # -> Tuple[PlotlyView, BytesIO]:
     """
     Generates a plotly view of a hydrograph.
     """
@@ -45,6 +46,11 @@ def create_hydrograph(hylakID: str, filename: str, timespan="total", heightIn='5
     time = []
     flow = []
     plot_data = []
+    itemList = []
+
+    meanColor = '#005fa5' # '#003f5c' # '#0080ff'
+    stdDevColor = '#ffa600'
+    extremesColor = '#bc5090'
     
     # manipulate data if necessary
     # make all the data easy for plotly to read
@@ -58,46 +64,61 @@ def create_hydrograph(hylakID: str, filename: str, timespan="total", heightIn='5
         time = sorted([datetime.strptime(dt, "%j") for dt in time])
         time = [dt.strftime("%b-%d") for dt in time]
 
+        ymax = gb.max()[hylakID].to_list()
+        yPosStdv = gb.agg(lambda x: x.mean() + x.std())[hylakID].to_list()
+        ymean = gb.mean()[hylakID].to_list()
+        yNegStdv = gb.agg(lambda x: x.mean() - x.std())[hylakID].to_list()
+        ymin = gb.min()[hylakID].to_list()
+
+        dumbDataList = [
+            ["max", [time, ymax]],
+            ["+σ", [time, yPosStdv]],
+            ["mean", [time, ymean]],
+            ["-σ", [time, yNegStdv]],
+            ["min", [time, ymin]],
+        ]
+
         maxDict = {
             "x": time,
-            "y": gb.max()[hylakID].to_list(),
-            "line": {'color': '#bc5090', 'width': 4, 'shape':'spline'},
+            "y": ymax,
+            "line": {'color': extremesColor, 'width': 4, 'shape':'spline'},
             "name": "max",
-            "fill": "tonexty"
+            "fill": "tonexty",
+            "fillcolor": f"rgba{str(ImageColor.getrgb(extremesColor + '80')).replace(' ','').replace('128', '0.5')}"
         }
 
         posStdvDict = {
             "x": time,
-            "y": gb.agg(lambda x: x.mean() + x.std())[hylakID].to_list(),
-            "line": {'color': '#ffa600', 'width': 4, 'shape':'spline'},
+            "y": yPosStdv,
+            "line": {'color': stdDevColor, 'width': 4, 'shape':'spline'},
             "name": "+σ",
-            "fill": "tonexty"
+            "fill": "tonexty",
+            "fillcolor": f"rgba{str(ImageColor.getrgb(stdDevColor + '80')).replace(' ','').replace('128', '0.5')}"
         }
 
         meanDict = {
             "x": time,
-            "y": gb.mean()[hylakID].to_list(),
-            "line": {'color': '#003f5c', 'width': 4, 'shape':'spline'}, # 0080ff
+            "y": ymean,
+            "line": {'color': meanColor, 'width': 4, 'shape':'spline'},
             "name": "mean",
             "fill": "tonexty",
-            "fillcolor": 'rgba(255, 166, 0, 0.5)' # same color as below posStdv
+            "fillcolor": f"rgba{str(ImageColor.getrgb(stdDevColor + '80')).replace(' ','').replace('128', '0.5')}"
         }
 
         negStdvDict = {
             "x": time,
-            "y": gb.agg(lambda x: x.mean() - x.std())[hylakID].to_list(),
-            "line": {'color': '#ffa600', 'width': 4, 'shape':'spline'},
+            "y": yNegStdv,
+            "line": {'color': stdDevColor, 'width': 4, 'shape':'spline'},
             "name": "-σ",
             "fill": "tonexty",
-            "fillcolor": 'rgba(188, 80, 144, 0.5)' # same color as below maxDict
+            "fillcolor": f"rgba{str(ImageColor.getrgb(extremesColor + '80')).replace(' ','').replace('128', '0.5')}"
         }
 
         minDict = {
             "x": time,
-            "y": gb.min()[hylakID].to_list(),
-            "line": {'color': '#bc5090', 'width': 4, 'shape':'spline'},
+            "y": ymin,
+            "line": {'color': extremesColor, 'width': 4, 'shape':'spline'},
             "name": "min",
-            # no fill here, the functions are weird and make it hard to fill upwards
         }
 
         itemList = [maxDict, posStdvDict, meanDict, negStdvDict, minDict]
@@ -117,51 +138,73 @@ def create_hydrograph(hylakID: str, filename: str, timespan="total", heightIn='5
         time = sorted([datetime.strptime(dt, "%m") for dt in time])
         time = [dt.strftime("%b") for dt in time]
 
+        ymax = gb.max()[hylakID].to_list()
+        yPosStdv = gb.agg(lambda x: x.mean() + x.std())[hylakID].to_list()
+        ymean = gb.mean()[hylakID].to_list()
+        yNegStdv = gb.agg(lambda x: x.mean() - x.std())[hylakID].to_list()
+        ymin = gb.min()[hylakID].to_list()
+
+        dumbDataList = [
+            ["max", [time, ymax]],
+            ["+σ", [time, yPosStdv]],
+            ["mean", [time, ymean]],
+            ["-σ", [time, yNegStdv]],
+            ["min", [time, ymin]],
+        ]
+
         maxDict = {
             "x": time,
-            "y": gb.max()[hylakID].to_list(),
-            "line": {'color': '#bc5090', 'width': 4, 'shape':'spline'},
+            "y": ymax,
+            "line": {'color': extremesColor, 'width': 4, 'shape':'spline'},
             "name": "max",
-            "fill": "tonexty"
+            "fill": "tonexty",
+            "fillcolor": f"rgba{str(ImageColor.getrgb(extremesColor + '80')).replace(' ','').replace('128', '0.5')}"
         }
 
         posStdvDict = {
             "x": time,
-            "y": gb.agg(lambda x: x.mean() + x.std())[hylakID].to_list(),
-            "line": {'color': '#ffa600', 'width': 4, 'shape':'spline'},
+            "y": yPosStdv,
+            "line": {'color': stdDevColor, 'width': 4, 'shape':'spline'},
             "name": "+σ",
-            "fill": "tonexty"
+            "fill": "tonexty",
+            "fillcolor": f"rgba{str(ImageColor.getrgb(stdDevColor + '80')).replace(' ','').replace('128', '0.5')}"
         }
 
         meanDict = {
             "x": time,
-            "y": gb.mean()[hylakID].to_list(),
-            "line": {'color': '#003f5c', 'width': 4, 'shape':'spline'}, # 0080ff
+            "y": ymean,
+            "line": {'color': meanColor, 'width': 4, 'shape':'spline'},
             "name": "mean",
             "fill": "tonexty",
-            "fillcolor": 'rgba(255, 166, 0, 0.5)'
+            "fillcolor": f"rgba{str(ImageColor.getrgb(stdDevColor + '80')).replace(' ','').replace('128', '0.5')}"
         }
 
         negStdvDict = {
             "x": time,
-            "y": gb.agg(lambda x: x.mean() - x.std())[hylakID].to_list(),
-            "line": {'color': '#ffa600', 'width': 4, 'shape':'spline'},
+            "y": yNegStdv,
+            "line": {'color': stdDevColor, 'width': 4, 'shape':'spline'},
             "name": "-σ",
             "fill": "tonexty",
-            "fillcolor": 'rgba(188, 80, 144, 0.5)'
+            "fillcolor": f"rgba{str(ImageColor.getrgb(extremesColor + '80')).replace(' ','').replace('128', '0.5')}"
         }
 
         minDict = {
             "x": time,
-            "y": gb.min()[hylakID].to_list(),
-            "line": {'color': '#bc5090', 'width': 4, 'shape':'spline'},
+            "y": ymin,
+            "line": {'color': extremesColor, 'width': 4, 'shape':'spline'},
             "name": "min",
         }
 
         itemList = [maxDict, posStdvDict, meanDict, negStdvDict, minDict]
 
+        def update_trace(trace, points, selector):
+            print(trace)
+            for item in trace:
+                print(item)
+
         for item in reversed(itemList):
             hydrograph_go = go.Scatter(**item)
+            hydrograph_go.on_click(update_trace)
             plot_data.append(hydrograph_go)
         
 
@@ -176,44 +219,60 @@ def create_hydrograph(hylakID: str, filename: str, timespan="total", heightIn='5
         time = sorted([datetime.strptime(dt, "%Y") for dt in time])
         time = [dt.strftime("%Y") for dt in time]
 
+        ymax = gb.max()[hylakID].to_list()
+        yPosStdv = gb.agg(lambda x: x.mean() + x.std())[hylakID].to_list()
+        ymean = gb.mean()[hylakID].to_list()
+        yNegStdv = gb.agg(lambda x: x.mean() - x.std())[hylakID].to_list()
+        ymin = gb.min()[hylakID].to_list()
+
+        dumbDataList = [
+            ["max", [time, ymax]],
+            ["+σ", [time, yPosStdv]],
+            ["mean", [time, ymean]],
+            ["-σ", [time, yNegStdv]],
+            ["min", [time, ymin]],
+        ]
+
         maxDict = {
             "x": time,
-            "y": gb.max()[hylakID].to_list(),
-            "line": {'color': '#bc5090', 'width': 4, 'shape':'spline'},
+            "y": ymax,
+            "line": {'color': extremesColor, 'width': 4, 'shape':'spline'},
             "name": "max",
-            "fill": "tonexty"
+            "fill": "tonexty",
+            "fillcolor": f"rgba{str(ImageColor.getrgb(extremesColor + '80')).replace(' ','').replace('128', '0.5')}"
         }
 
         posStdvDict = {
             "x": time,
-            "y": gb.agg(lambda x: x.mean() + x.std())[hylakID].to_list(),
-            "line": {'color': '#ffa600', 'width': 4, 'shape':'spline'},
+            "y": yPosStdv,
+            "line": {'color': stdDevColor, 'width': 4, 'shape':'spline'},
             "name": "+σ",
-            "fill": "tonexty"
+            "fill": "tonexty",
+            "fillcolor": f"rgba{str(ImageColor.getrgb(stdDevColor + '80')).replace(' ','').replace('128', '0.5')}"
         }
 
         meanDict = {
             "x": time,
-            "y": gb.mean()[hylakID].to_list(),
-            "line": {'color': '#003f5c', 'width': 4, 'shape':'spline'}, # 0080ff
+            "y": ymean,
+            "line": {'color': meanColor, 'width': 4, 'shape':'spline'},
             "name": "mean",
             "fill": "tonexty",
-            "fillcolor": 'rgba(255, 166, 0, 0.5)'
+            "fillcolor": f"rgba{str(ImageColor.getrgb(stdDevColor + '80')).replace(' ','').replace('128', '0.5')}"
         }
 
         negStdvDict = {
             "x": time,
-            "y": gb.agg(lambda x: x.mean() - x.std())[hylakID].to_list(),
-            "line": {'color': '#ffa600', 'width': 4, 'shape':'spline'},
+            "y": yNegStdv,
+            "line": {'color': stdDevColor, 'width': 4, 'shape':'spline'},
             "name": "-σ",
             "fill": "tonexty",
-            "fillcolor": 'rgba(188, 80, 144, 0.5)'
+            "fillcolor": f"rgba{str(ImageColor.getrgb(extremesColor + '80')).replace(' ','').replace('128', '0.5')}"
         }
 
         minDict = {
             "x": time,
-            "y": gb.min()[hylakID].to_list(),
-            "line": {'color': '#bc5090', 'width': 4, 'shape':'spline'},
+            "y": ymin,
+            "line": {'color': extremesColor, 'width': 4, 'shape':'spline'},
             "name": "min",
         }
 
@@ -228,12 +287,17 @@ def create_hydrograph(hylakID: str, filename: str, timespan="total", heightIn='5
         time = df["Dates"].astype(str).to_list()
         flow = df[hylakID].to_list()
 
+        dumbDataList = [
+            ["mean", [time, flow]]
+        ]
+
         simpleDict = {
             "x": time,
             "y": flow,
             "name": name,
-            "line": {'color': '#003f5c', 'width': 4, 'shape':'spline'}, # #0080ff
+            "line": {'color': meanColor, 'width': 4, 'shape':'spline'}, # #003f5c
         }
+        itemList = [simpleDict]
 
         hydrograph_go = go.Scatter(**simpleDict)
         plot_data = [hydrograph_go]
@@ -241,22 +305,27 @@ def create_hydrograph(hylakID: str, filename: str, timespan="total", heightIn='5
     del df
 
     layout = {
-        'title':  name,
         'xaxis':  {'title': 'Time (date)'},
         'yaxis':  {'title': 'Flow (rate)'},
         'height': int(heightIn),
     }
-    
+
     figure = go.Figure(data = plot_data, layout = layout)
 
-    tempImage = BytesIO()
+    if (mode == 2):
+        layout['title'] =  name
+        tempImage = BytesIO()
 
-    figure.write_image(tempImage, format="png", scale=10, width=8*inch, height=graphScale*inch, validate=True)
-    # return tempImage
+        figure.write_image(tempImage, format="png", scale=10, width=8*inch, height=graphScale*inch, validate=True)
+        return tempImage
 
-
-    hydrograph_plot = PlotlyView(figure, height=heightIn, width=widthIn)
-    return hydrograph_plot, tempImage
+    elif (mode == 1):
+        hydrograph_plot = PlotlyView(figure, height=heightIn, width=widthIn)
+        return hydrograph_plot
+    
+    # print(hydrograph_plot)
+    # itemList.reverse()
+    return dumbDataList
 
 def createCSV(hylakID: str, filename: str) -> str:
     # Get data from csv file
@@ -428,7 +497,7 @@ def createPDF (hylak_id: int, img: BytesIO) -> BytesIO:
     cursorX = (width - (8 * inch))//2
     timespans = ["total", "yearly", "monthly", "daily"]
     for span in timespans:
-        img = create_hydrograph(hylakID=hylak_id, filename=filename, timespan=span, graphScale=graphScale)[1]
+        img = create_hydrograph(hylakID=hylak_id, filename=filename, timespan=span, graphScale=graphScale, pdf=True)
         imag = Image.open(img)
         if (cursorY > (graphScale * inch) + 10):
             cursorY -= graphScale*inch - 10

@@ -73,9 +73,6 @@ $(function() {
     // const csrftoken = getCookie('csrftoken');
     const xcsrftoken = document.getElementsByName("csrfmiddlewaretoken")[0].value;
     $("input[name='csrfmiddlewaretoken']").remove();
-    // console.log(document.cookie)
-    // console.log(csrftoken);
-    console.log(xcsrftoken);
 
     let urlArray = window.location.href.split("/").filter(n => n);
     let Hylak_id = parseInt(urlArray[urlArray.length - 1]);
@@ -291,7 +288,7 @@ $(function() {
         }
         document.getElementById(tabId + "-content").style.display = "block";
         $(e.currentTarget).addClass("active");
-        if (tabId == "graph-normal" || tabId == "graph-yearly" || tabId == "graph-monthly" || tabId == "graph-daily" || tabId == "location")
+        if (tabId == "graph-full" || tabId == "graph-yearly" || tabId == "graph-monthly" || tabId == "graph-daily" || tabId == "location")
           window.dispatchEvent(new Event('resize'));
         
     }
@@ -338,47 +335,327 @@ $(function() {
         tablinks[i].addEventListener('click', openTab);
     }
     $(tablinks[0]).trigger('click'); // ensures one is selected by default
-    graphHeight = document.querySelector("#location-content").clientHeight - 100; // the graphs are funky, they need a definite height to load in
+    graphHeight = document.querySelector("#location-content").clientHeight - 124; // the graphs are funky, they need a definite height to load in
+    graphWidth = document.querySelector("#location-content").clientWidth - 24; // the graphs are funky, they need a definite height to load in
 
     // graph loading setup
     let url = "/apps/ol-test/hydrographs/ajax/";
-    let total_data = {
+    let full_data = {
         'csrfmiddlewaretoken': xcsrftoken,
         "hylak_id": Hylak_id,
         "height": graphHeight,
         "timespan": "total",
+        "mode": 0,
     }
     let yearly_data = {
         'csrfmiddlewaretoken': xcsrftoken,
         "hylak_id": Hylak_id,
         "height": graphHeight,
         "timespan": "yearly",
+        "mode": 0,
     }
     let monthly_data = {
         'csrfmiddlewaretoken': xcsrftoken,
         "hylak_id": Hylak_id,
         "height": graphHeight,
         "timespan": "monthly",
+        "mode": 0,
     }
     let daily_data = {
         'csrfmiddlewaretoken': xcsrftoken,
         "hylak_id": Hylak_id,
         "height": graphHeight,
         "timespan": "daily",
+        "mode": 0,
     }
     // graph loading payoff (all of these load the graphs serially in each of their tabs)
-    $('#graph-normal-plot').load(url, total_data, function() {
-        $("#normal-loader").hide();
+    // $('#graph-normal-plot').load(url, total_data, function() {
+    //     $("#normal-loader").hide();
+    // });
+    // $('#graph-yearly-plot').load(url, yearly_data, function() {
+    //     $("#yearly-loader").hide();
+    // });
+    // $('#graph-monthly-plot').load(url, monthly_data, function() {
+    //     $("#monthly-loader").hide();
+    // });
+    // var retstr;
+    // $('#graph-daily-plot').load(url, daily_data, function(strong) {
+    //     $("#daily-loader").hide();
+    //     // retstr = strong;
+    //     console.log(strong);
+    // });
+
+    // useful for two functions, would rather have them easily editable in one spot rather than 2
+    let meanColor = '#005fa5' // '#003f5c' // '#0080ff'
+    let stdDevColor = '#ffa600'
+    let extremesColor = '#bc5090'
+    
+    function processGraphData(inList) {
+        var traces = [];
+        for (let i = inList.length-1; i >= 0; i--) {
+            let lineColor = meanColor;
+            let fillColor = "none";
+            let fillType = "none";
+            let name = inList[i][0];
+
+            if ((name == "max")) {
+                lineColor = extremesColor;
+                fillType = "tonexty";
+                fillColor = lineColor;
+            }
+            else if (name == "+σ") { // lowercase Sigma
+                lineColor = stdDevColor;
+                fillType = "tonexty";
+                fillColor = lineColor;
+            }
+            else if ((name == "mean") && (inList.length > 1)) {
+                fillType = "tonexty";
+                fillColor = stdDevColor;
+            }
+            else if (name == "-σ") { // lowercase Sigma
+                lineColor = stdDevColor;
+                fillType = "tonexty";
+                fillColor = extremesColor
+            }
+            else if (name == "min") {
+                lineColor = extremesColor;
+                fillType = "none";
+                fillColor = lineColor;
+            }
+            fillColor += "80";
+
+            let trace = {
+                name: inList[i][0], // I'd just put name here but i really like how this looks
+                x: inList[i][1][0],
+                y: inList[i][1][1],
+                mode: 'lines',
+                type: 'scatter',
+                fill: fillType,
+                fillcolor: fillColor,
+                line: {
+                    color: lineColor,
+                    width: 4,
+                },
+                visible: true,
+            }
+            traces.push(trace);
+        }
+        return traces;
+    }
+
+    /* names: 
+    "max"
+    "+σ"
+    "mean"
+    "-σ"
+    "min"
+    */
+
+    function legendClick(data, divID) {
+        console.log(data);
+        let index = data.curveNumber;
+        let json = {"min": {}};
+        for (let i = 0; i < data.data.length; i++) {
+            let curveName = String(data.data[i]["name"]);
+            let vis = String(data.data[i]["visible"]);
+            json[curveName] = {"visible": "yes", "index": 0};
+            json[curveName]["visible"] = vis;
+            json[curveName]["index"] = i;
+            if (i == index) {
+                if (vis == "true")
+                    json[curveName]["visible"] = "legendonly";
+                else
+                    json[curveName]["visible"] = "true";
+                
+            }
+        }
+        // console.log(json);
+        data.data[0]["fill"] = "tonexty";
+
+        // max visibility:
+        // if every other thing is not visible, make max's fill "none"
+        if ((json["+σ"].visible == "legendonly") && (json["mean"].visible == "legendonly") && (json["-σ"].visible == "legendonly") && (json["min"].visible == "legendonly"))
+            data.data[json["max"].index].fill = "none";
+        else // otherwise, default
+            data.data[json["max"].index].fill = "tonexty";
+        
+        // +std's visibility
+        // if everything below "+σ" is invisible, turn off fill as well
+        if ((json["mean"].visible == "legendonly") && (json["-σ"].visible == "legendonly") && (json["min"].visible == "legendonly"))
+            data.data[json["+σ"].index].fill = "none";
+        else // otherwise, default
+            data.data[json["+σ"].index].fill = "tonexty";
+
+        // mean visibility:
+        // if -std not visible but min is, change mean's fill color to extremesColor
+        if ((json["-σ"].visible == "legendonly") && (json["min"].visible == "true")){
+            data.data[json["mean"].index].fillcolor = extremesColor + "80";
+            data.data[json["mean"].index].fill = "tonexty";
+        }
+        // if -std is visible, change mean's fill color to stdDevColor
+        else if (json["-σ"].visible == "true"){
+            data.data[json["mean"].index].fillcolor = stdDevColor + "80";
+            data.data[json["mean"].index].fill = "tonexty";
+        }
+        // if they're both invisible, make mean's fill "none"
+        else if ((json["-σ"].visible == "legendonly") && (json["min"].visible == "legendonly"))
+            data.data[json["mean"].index].fill = "none";
+        
+        // console.log(data.data[json["mean"].index].fillColor);
+
+        // -std's visibility
+        // if min not visible, fill = none. else, fill = tonexty
+        if (json["min"].visible != "true")
+            data.data[json["-σ"].index].fill = "none";
+        else
+            data.data[json["-σ"].index].fill = "tonexty";
+
+        // min doesn't have any of this
+        data.data[json["min"].index].fill = "none";
+    }
+
+
+    var config = {responsive: true};
+    var graphMargin = {
+        l: 100,
+        r: 100,
+        b: 50,
+        t: 50,
+        pad: 4,
+    }
+
+    $.ajax(url, {
+        method: 'POST',
+        headers: {"X-CSRFToken": xcsrftoken},
+        beforeSend: function (xhr) {
+            xhr.setRequestHeader("X-CSRFToken", xcsrftoken)
+        },
+        data: full_data,
+        dataType: "json",
+        success: function (data) {
+            var layout = {
+                height: graphHeight,
+                margin: graphMargin,
+                title: `Full Hydrograph for ${Hylak_id}`,
+                xaxis: {
+                    tickformat: '%b-%d-%Y',
+                    // tick0: '2001-01-01',
+                    tickangle: 15,
+                    dtick: "M12",
+                },
+            };
+            Plotly.newPlot('graph-full-plot', processGraphData(data['data']), layout, config);
+            $("#full-loader").hide();
+            var myPlot = document.getElementById('graph-full-plot');
+            myPlot.on('plotly_legendclick', function(data) {
+                legendClick(data, 'graph-full-plot')
+                return false
+            });
+        }
     });
-    $('#graph-yearly-plot').load(url, yearly_data, function() {
-        $("#yearly-loader").hide();
+
+    $.ajax(url, {
+        method: 'POST',
+        headers: {"X-CSRFToken": xcsrftoken},
+        beforeSend: function (xhr) {
+            xhr.setRequestHeader("X-CSRFToken", xcsrftoken)
+        },
+        data: yearly_data,
+        dataType: "json",
+        success: function (data) {
+            var layout = {
+                height: graphHeight,
+                margin: graphMargin,
+                title: `Yearly Hydrograph for ${Hylak_id}`,
+            };
+            Plotly.newPlot('graph-yearly-plot', processGraphData(data['data']), layout, config);
+            $("#yearly-loader").hide();
+            var myPlot = document.getElementById('graph-yearly-plot');
+            myPlot.on('plotly_legendclick', function(data) {
+                legendClick(data, 'graph-yearly-plot')
+            });
+        }
     });
-    $('#graph-monthly-plot').load(url, monthly_data, function() {
-        $("#monthly-loader").hide();
+
+    $.ajax(url, {
+        method: 'POST',
+        headers: {"X-CSRFToken": xcsrftoken},
+        beforeSend: function (xhr) {
+            xhr.setRequestHeader("X-CSRFToken", xcsrftoken)
+        },
+        data: monthly_data,
+        dataType: "json",
+        success: function (data) {
+            var layout = {
+                height: graphHeight,
+                margin: graphMargin,
+                title: `Monthly Hydrograph for ${Hylak_id}`,
+                xaxis: {
+                    tickformat: '%b'
+                },
+            };
+            Plotly.newPlot('graph-monthly-plot', processGraphData(data['data']), layout, config);
+            $("#monthly-loader").hide();
+            var myPlot = document.getElementById('graph-monthly-plot');
+            myPlot.on('plotly_legendclick', function(data) {
+                legendClick(data, 'graph-monthly-plot')
+            });
+        }
     });
-    $('#graph-daily-plot').load(url, daily_data, function() {
-        $("#daily-loader").hide();
+
+    $.ajax(url, {
+        method: 'POST',
+        headers: {"X-CSRFToken": xcsrftoken},
+        beforeSend: function (xhr) {
+            xhr.setRequestHeader("X-CSRFToken", xcsrftoken)
+        },
+        data: daily_data,
+        dataType: "json",
+        success: function (data) {
+            var layout = {
+                height: graphHeight,
+                margin: graphMargin,
+                title: `Daily Hydrograph for ${Hylak_id}`,
+                xaxis: {
+                    tickformat: '%b-%d'
+                }
+            };
+            // console.log(processGraphData(data['data']));
+            Plotly.newPlot('graph-daily-plot', processGraphData(data['data']), layout, config);
+            $("#daily-loader").hide();
+            var myPlot = document.getElementById('graph-daily-plot');
+            myPlot.on('plotly_legendclick', function(data) {
+                legendClick(data, 'graph-daily-plot')
+            });
+        }
     });
+
+    // console.log(retstr);
+
+    // var trace1 = {
+    //     x: [1, 2, 3, 4],
+    //     y: [10, 15, 13, 17],
+    //     mode: 'markers',
+    //     type: 'scatter'
+    // };
+    
+    // var trace2 = {
+    //     x: [2, 3, 4, 5],
+    //     y: [16, 5, 11, 9],
+    //     mode: 'lines',
+    //     type: 'scatter'
+    // };
+    
+    // var trace3 = {
+    //     x: [1, 2, 3, 4],
+    //     y: [12, 9, 15, 12],
+    //     mode: 'lines+markers',
+    //     type: 'scatter'
+    // };
+      
+    // var data = [trace1, trace2, trace3];
+    // Plotly.newPlot('examplePlot', data);
+    // Plotly.newPlot('myDiv', data);
 
     // simple functionality for the download buttons
     document.getElementById("download-pdf-btn").addEventListener('click', function() {
