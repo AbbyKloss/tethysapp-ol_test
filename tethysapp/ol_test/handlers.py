@@ -15,14 +15,39 @@ from .helpers import get_workspace
 from .model import Station
 
 # an attempt to somewhat speed up the details page and creation of pdfs
-# saves 4-5s when used well
+# saves 4-5s per pdf when used well
 glob_HID = 0
 glob_df = None
-# it = 0
 
-def create_hydrograph(hylakID: str, filename: str, timespan="total", heightIn='520', widthIn='100%', mode=0, graphScale = 5.25): # -> Tuple[PlotlyView, BytesIO]:
+def create_hydrograph(hylakID: str, filename: str, timespan="total", heightIn='520', widthIn='100%', mode=0, graphScale = 5.25): # -> PlotlyView, list[list], BytesIO:
     """
-    Generates a plotly view of a hydrograph.
+    Generates hydrographs based on the mode variable.
+
+    Parameters
+    ----------
+    hylakID: str
+            The Hydro Lake to get information for
+    filename: str
+            The file from which to draw all the information
+    timespan: str
+            "total"   - The full historical data, no modifications
+            "yearly"  - Compresses the data to a single point per year, adds statistical information
+            "monthly" - Compresses the data to one point for every month (i.e. 12 points), adds statistical information
+            "daily"   - Compresses the data to one point for every day represented in the data (similar to month's 12 points), adds statistical information
+    heightIn: str
+            sets the height in pixels for a PlotlyView graph. format is an int, but a string
+    widthIn: str
+            I think this is only used for the ajax use of PlotlyView. defaults to '100%' and there's little reason to change that
+    mode: int
+        mode default: returns just the data to build a hydrograph, in use on the details page
+        mode = 1: returns a PlotlyView object to take care of building the graph, in use on the main page
+        mode = 2: returns an image of the PlotlyView hydrograph via a BytesIO object
+    graphScale: int
+                defaults to 5.25, sets the general dimensions of the graph, namely for the pdfs
+
+    Returns
+    -------
+    Depending on mode, list[str, list[list[str], list[float]]], PlotlyView(), or BytesIO, in that order
     """
 
     # making sure variables are fine
@@ -42,11 +67,13 @@ def create_hydrograph(hylakID: str, filename: str, timespan="total", heightIn='5
         df = glob_df.copy()
     
     # prepare it for processing
+    # any and all processing that may need to be done
     name = ""
     time = []
     flow = []
     plot_data = []
     itemList = []
+    fullDataList = []
 
     meanColor = '#005fa5' # '#003f5c' # '#0080ff'
     stdDevColor = '#ffa600'
@@ -54,23 +81,34 @@ def create_hydrograph(hylakID: str, filename: str, timespan="total", heightIn='5
     
     # manipulate data if necessary
     # make all the data easy for plotly to read
+    # make it rather tedious for a human to read (or write)
+    # all of this data is used for most uses of this function, so this is truly necessary
+    # i will just be commenting timespan=="daily" and the else statement, for my own sanity
+    # each of the if statements are very similar with minor adjustments
     if timespan == "daily":
-        name = f"Daily Hydrograph for {hylakID}"
+        # setup
+        name = f"Daily Surface Area for {hylakID}"
+        # condense the dates down to just the days of the year
         df["Dates"] = pd.to_datetime(df["Dates"], format="%Y-%m-%d").dt.strftime("%j")
 
+        # condense the data as well
         gb = df.groupby(["Dates"])
 
+        # convert the dates to something more readable
+        # in this case, the format is [abbreviated month]-[date]
         time = list(set(df["Dates"].to_list()))
         time = sorted([datetime.strptime(dt, "%j") for dt in time])
         time = [dt.strftime("%b-%d") for dt in time]
 
+        # put all of the statistical information into different lists so we can make different traces from each list
         ymax = gb.max()[hylakID].to_list()
         yPosStdv = gb.agg(lambda x: x.mean() + x.std())[hylakID].to_list()
         ymean = gb.mean()[hylakID].to_list()
         yNegStdv = gb.agg(lambda x: x.mean() - x.std())[hylakID].to_list()
         ymin = gb.min()[hylakID].to_list()
 
-        dumbDataList = [
+        # for mode=0, this is where it ends, everything after this is excessive
+        fullDataList = [
             ["max", [time, ymax]],
             ["+σ", [time, yPosStdv]],
             ["mean", [time, ymean]],
@@ -78,6 +116,10 @@ def create_hydrograph(hylakID: str, filename: str, timespan="total", heightIn='5
             ["min", [time, ymin]],
         ]
 
+        # create dictionaries for each of the lists to easily pass data into the graph creation functions
+        # makes it easier to read and adjust each value
+        # these are all the exact same in each if statement
+        # definitions for all of the keys are in Plotly documentation, look for graph_object.Scatter()
         maxDict = {
             "x": time,
             "y": ymax,
@@ -121,6 +163,7 @@ def create_hydrograph(hylakID: str, filename: str, timespan="total", heightIn='5
             "name": "min",
         }
 
+        # create the scatter plots and append them to a containing list, iteratively
         itemList = [maxDict, posStdvDict, meanDict, negStdvDict, minDict]
 
         for item in reversed(itemList):
@@ -129,7 +172,7 @@ def create_hydrograph(hylakID: str, filename: str, timespan="total", heightIn='5
         
 
     elif timespan == "monthly":
-        name = f"Monthly Hydrograph for {hylakID}"
+        name = f"Monthly Surface Area for {hylakID}"
         df["Dates"] = pd.to_datetime(df["Dates"], format="%Y-%m-%d").dt.strftime("%m")
 
         gb = df.groupby(["Dates"])
@@ -144,7 +187,7 @@ def create_hydrograph(hylakID: str, filename: str, timespan="total", heightIn='5
         yNegStdv = gb.agg(lambda x: x.mean() - x.std())[hylakID].to_list()
         ymin = gb.min()[hylakID].to_list()
 
-        dumbDataList = [
+        fullDataList = [
             ["max", [time, ymax]],
             ["+σ", [time, yPosStdv]],
             ["mean", [time, ymean]],
@@ -210,7 +253,7 @@ def create_hydrograph(hylakID: str, filename: str, timespan="total", heightIn='5
 
 
     elif timespan == "yearly":
-        name = f"Yearly Hydrograph for {hylakID}"
+        name = f"Yearly Surface Area for {hylakID}"
         df["Dates"] = pd.to_datetime(df["Dates"], format="%Y-%m-%d").dt.strftime("%Y")
 
         gb = df.groupby(["Dates"])
@@ -225,7 +268,7 @@ def create_hydrograph(hylakID: str, filename: str, timespan="total", heightIn='5
         yNegStdv = gb.agg(lambda x: x.mean() - x.std())[hylakID].to_list()
         ymin = gb.min()[hylakID].to_list()
 
-        dumbDataList = [
+        fullDataList = [
             ["max", [time, ymax]],
             ["+σ", [time, yPosStdv]],
             ["mean", [time, ymean]],
@@ -283,49 +326,57 @@ def create_hydrograph(hylakID: str, filename: str, timespan="total", heightIn='5
             plot_data.append(hydrograph_go)
 
     else:
-        name = f"Hydrograph for {hylakID}"
+        # set things up for go.Scatter()
+        name = f"Historical Surface Area for {hylakID}"
         time = df["Dates"].astype(str).to_list()
         flow = df[hylakID].to_list()
 
-        dumbDataList = [
+        # for mode=0
+        fullDataList = [
             ["mean", [time, flow]]
         ]
 
+        # still easier to read like this than an expanded function, i feel
         simpleDict = {
             "x": time,
             "y": flow,
             "name": name,
             "line": {'color': meanColor, 'width': 4, 'shape':'spline'}, # #003f5c
         }
-        itemList = [simpleDict]
 
         hydrograph_go = go.Scatter(**simpleDict)
         plot_data = [hydrograph_go]
     
+    # deletes the local dataframe, presumably saves some memory
     del df
 
+    # modes 1 and 2 require this, so set it up here to not repeat code
+    # it's just simple graph information, title, axis labels, graph height
     layout = {
-        'xaxis':  {'title': 'Time (date)'},
-        'yaxis':  {'title': 'Flow (rate)'},
+        'title': name,
+        'xaxis': {'title': 'Time (date)'},
+        'yaxis': {'title': 'Surface Area (km²)'},
         'height': int(heightIn),
     }
 
+    # create the figure for modes 1 and 2
     figure = go.Figure(data = plot_data, layout = layout)
 
+    # create the image, return it
     if (mode == 2):
-        layout['title'] =  name
         tempImage = BytesIO()
 
         figure.write_image(tempImage, format="png", scale=10, width=8*inch, height=graphScale*inch, validate=True)
         return tempImage
 
+    # create the PlotlyView object, return it
     elif (mode == 1):
         hydrograph_plot = PlotlyView(figure, height=heightIn, width=widthIn)
         return hydrograph_plot
     
-    # print(hydrograph_plot)
-    # itemList.reverse()
-    return dumbDataList
+    # default mode
+    # return the data in a way that the client can read it
+    return fullDataList
 
 def createCSV(hylakID: str, filename: str) -> str:
     # Get data from csv file
@@ -354,25 +405,36 @@ def wordWrap(instr: str, maxLen: int) -> list:
     strLstA = []
     strLstB = []
     BigList = []
+
+    # Split the string into two strings while the first strings has a high enough length
     while (len(strA) > maxLen):
-        # print(len(strA))
         strLstA = strA.split(" ")
-        strLstB.insert(0, strLstA.pop())
+        strLstB.insert(0, strLstA.pop()) # takes the last item in the first list and puts it in the first place of the second list
         strA = " ".join(strLstA)
         strB = " ".join(strLstB)
 
+    # if the second string list is too long, recursively run the while loop,
+    # appending the consecutive strings to a bigger list along the way
     if (len(strB) > maxLen):
-        BigList.append(strA)
-        try:
-            result = wordWrap(strB, maxLen)
-            for item in result:
-                if (item == ''):
-                    continue
-                BigList.append(item)
-        except RecursionError:
+        # if the list is one word but it's too long, return the one word anyways
+        if (strA == ""):
             return [strB]
-    else:
+        
+        # put the good string on the list of strings
+        BigList.append(strA)
+
+        # recursively call wordWrap()
+        result = wordWrap(strB, maxLen)
+
+        # put all the resuls on the list of strings
+        for item in result:
+            BigList.append(item)
+    # if both strings exist and are the right size, return them both
+    elif (strB != ""):
         BigList = [strA, strB]
+    # if the second string isn't real, just return the first
+    else:
+        BigList = [strA]
     return BigList
 
 def createPDF (hylak_id: int, img: BytesIO) -> BytesIO:
@@ -473,10 +535,6 @@ def createPDF (hylak_id: int, img: BytesIO) -> BytesIO:
     cursorY = (curCursor + (graphScale * inch)) // 2
 
 
-    # img = getImage(coordLon=station.coordLon, coordLat=station.coordLat)
-    # if img == None:
-    #     print("Failed to retrieve location image")
-    # else:
     img.seek(0)
     test = BytesIO(img.read())
     imag = Image.open(test, formats=['png'])
@@ -497,7 +555,7 @@ def createPDF (hylak_id: int, img: BytesIO) -> BytesIO:
     cursorX = (width - (8 * inch))//2
     timespans = ["total", "yearly", "monthly", "daily"]
     for span in timespans:
-        img = create_hydrograph(hylakID=hylak_id, filename=filename, timespan=span, graphScale=graphScale, pdf=True)
+        img = create_hydrograph(hylakID=hylak_id, filename=filename, timespan=span, graphScale=graphScale, mode=2)
         imag = Image.open(img)
         if (cursorY > (graphScale * inch) + 10):
             cursorY -= graphScale*inch - 10

@@ -57,6 +57,7 @@ def init_primary_db(engine, first_time):
         Session = sessionmaker(bind=engine)
         session = Session()
 
+        # get and read the gjson, then take everything from there and add it to the database
         GeoJSONPath = get_workspace() + "/files/Hydrolakes/HydroLakes_polys_v10_10km2_Global_centroids/HydroLakes_polys_v10_10km2_Global_centroids.shp"
     
         input = json.loads(gpd.read_file(GeoJSONPath).to_json())['features']

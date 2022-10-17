@@ -4,4 +4,4 @@ Uses data from stations around the world to display various hydrographs for each
 
 ### [Tethys Setup](https://docs.tethysplatform.org/en/stable/installation.html)
 
-### [OL Test Installation Instructions](https://docs.tethysplatform.org/en/stable/installation/application.html)
+### [Tethys App Installation Instructions](https://docs.tethysplatform.org/en/stable/installation/application.html)

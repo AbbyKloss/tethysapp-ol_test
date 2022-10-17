@@ -4,6 +4,9 @@ from random import randint
 
 # i await the day tethys moves to python 3.10+ so i can use a match case statement here
 def randColor(static=0) -> str:
+    """
+    Returns a color hex code depending on "static". Default is a random color, anything else is commented.
+    """
     colString = ''
     if (static == 1):   # nice pink
         colString = '#F5A9B8'
@@ -31,7 +34,7 @@ class OlTest(TethysAppBase):
     icon = 'ol_test/images/icon.gif'
     package = 'ol_test'
     root_url = 'ol-test'
-    color = randColor()
+    color = randColor(4)
     description = ''
     tags = ''
     enable_feedback = False
@@ -39,7 +42,7 @@ class OlTest(TethysAppBase):
 
     def url_maps(self):
         """
-        Add controllers
+        Add controllers for everything necessary
         """
         UrlMap = url_map_maker(self.root_url)
 

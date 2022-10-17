@@ -14,24 +14,20 @@ def home(request):
     """
     Controller for the app home page.
     """
-
-    context = {
-    }
+    # there's not much to control, admittedly
+    # it's 90% javascript at this point
+    context = {}
 
     return render(request, 'ol_test/home.html', context)
 
 
 @login_required()
 def load_GJSON(request):
+    '''
+    Creates the GeoJSON from the database and passes it to the client
+    '''
     stations = get_all_stations()
-
     features = []
-
-    # testHelper = choice(stations)
-    # attributes = inspect.getmembers(testHelper, lambda a:not(inspect.isroutine(a)))
-    # print([a for a in attributes if not((a[0].startswith('__') and a[0].endswith('__')) or a[0].startswith('_sa') or (a[0] == 'metadata') or (a[0] == 'registry'))])
-    minVol = 0
-    maxVol = 0
 
     # Define GeoJSON Features
     for station in stations:
@@ -67,20 +63,9 @@ def load_GJSON(request):
                 'coordinates': [station.coordLon, station.coordLat],
             }            
         }
-        features.append(station_feature)
-        # print(station.Vol_total)
-        # if (station.Vol_total == None):
-        #     curVol = minVol
-        # else:
-        #     curVol = float(station.Vol_total)
-        # if (maxVol == 0):
-        #     minVol = maxVol = curVol
-        # if (maxVol < curVol):
-        #     maxVol = curVol
-        # if (minVol > curVol):
-        #     minVol = curVol
+        features.append(station_feature)    
     
-    
+    # Package the GeoJSON, then send it
     response = {'type': 'FeatureCollection',
                 'features': features
                 }
@@ -94,12 +79,15 @@ def hydrograph_ajax(request):
     """
     Controller for the Hydrograph Loaders.
     """
+    # needs to be a post request
     if (request.method != "POST"):
         return HttpResponse(status = 400)
     
+    # initializing data
     post = request.POST.dict()
     station_id, height, timespan, mode = "", "", "", 0
-    # print(post)
+
+    # retrieving data from POST request
     try:
         station_id = post['hylak_id']
         height = post['height']
@@ -107,20 +95,21 @@ def hydrograph_ajax(request):
         mode = int(post['mode'])
     except KeyError:
         return HttpResponse(status = 400)
+
+    # create graphs
     filename = "HydroLakes/HydroLakes_polys_v10_10km2_global_results_dswe.csv"
     traces = create_hydrograph(station_id, filename, timespan=timespan, heightIn=height, mode=mode)
 
-    print(f"{timespan} data sending, mode: {mode}")
 
+    context = {
+        'data': traces,
+    }
+
+    # if mode is PlotlyView mode (aka popover/graph modal graphs), render it
+    # otherwise, return the data as a JSON for plotly.js to handle
     if (mode == 1):
-        context = {
-            'hydrograph_plot': traces,
-        }
         return render(request, 'ol_test/hydrograph_ajax.html', context)
     else:
-        context = {
-            'data': traces,
-        }
         return JsonResponse(context)
 
 @csrf_protect
@@ -128,16 +117,21 @@ def update_feats(request):
     """
     Updates the coordinates of specific features based on an HttpRequest
     """
+    # needs to be a POST request, GET wouldn't be secure
     if (request.method != "POST"):
         return HttpResponse(status = 400)
+
+    # open database
     Session = app.get_persistent_store_database('primary_db', as_sessionmaker=True)
     session = Session()
 
+    # update database with data from client
     data = request.POST.dict()
     station = session.query(Station).filter_by(Hylak_id=data['Hylak_id']).first()
     station.coordLon = data['coordLon']
     station.coordLat = data['coordLat']
 
+    # close database, return "done"
     session.commit()
     session.close()
     return HttpResponse(status = 201)
@@ -146,11 +140,10 @@ def update_feats(request):
 def details(request, station_id):
     """
     Controller for the Details Page
+    Fills in template with data from database based on Hylak_ID
     """
 
-
     session = app.get_persistent_store_database('primary_db', as_sessionmaker=True)()
-
     station = session.query(Station).filter_by(Hylak_id=station_id).first()
 
     location_set = [
@@ -184,30 +177,7 @@ def details(request, station_id):
         ["Slope 100", station.Slope_100],
     ]
 
-    # location_img = None
-    # response = HttpResponse
-
-    # print(station.coordLon, station.coordLat)
-
     session.close()
-
-    
-
-    
-
-
-    # /files/misc/img.png
-    # url = "ol_test/images/img.png"
-    # print(url)
-
-    # Programmatic gathering of attributes and names
-    # Perfect if you have multiple datasets, but we only have the one
-    #   and we wanna display it nicely
-    # attributes = inspect.getmembers(station, lambda a:not(inspect.isroutine(a)))
-    # data_list = [a for a in attributes if not((a[0].startswith('__') and a[0].endswith('__')) or a[0].startswith('_sa') or (a[0] == 'metadata') or (a[0] == 'registry') or (a[0] == 'id') or (a[0] == 'layer'))]
-    # print(data_list)
-
-    # session.close()
 
     context = {
         'location_set': location_set,
@@ -218,19 +188,27 @@ def details(request, station_id):
     return render(request, "ol_test/details.html", context)
 
 def download_station_csv(request):
-    print("download_station_csv")
+    '''
+    Controller for client CSV requests
+    Sends Client a CSV based on passed Hylak_ID
+    '''
+    # Requires GET request, POST would be excessive
     if (request.method != "GET"):
         print(request.method)
         return HttpResponse(status = 400)
+    
+    # initializing data
     get = request.GET.dict()
     station_id = ""
 
+    # attempting to retrieve data
     try:
         station_id = get['hylak_id']
     except (KeyError, ValueError) as e:
         print(e)
         return HttpResponse(status = 400)
-    # get csv data
+    
+    # get csv data from original csv file
     filename = "HydroLakes/HydroLakes_polys_v10_10km2_global_results_dswe.csv"
     file_data = createCSV(station_id, filename)
 
@@ -242,44 +220,39 @@ def download_station_csv(request):
 
 @csrf_protect
 def pdf_ajax(request):
-    print(request.headers)
+    '''
+    Controller for client PDF requests
+    Creates PDFs based on passed data and sends PDF to client
+    '''
+    # Requires it to be a POST request, not a GET request
     if (request.method != "POST"):
         print(request.method)
         return HttpResponse(status = 400)
+
+    # initializing data
     post = request.POST.dict()
     station_id = ""
-    # print(post)
-    # for key in post.keys():
-    #     print(post[key])
 
+    # getting data from POST
     try:
         station_id = int(post['hylak_id'])
     except (KeyError, ValueError) as e:
         print(e)
         return HttpResponse(status = 400)    
 
-    img_data = post['map_blob'] #.decode('UTF-8')
-    img_data = base64.b64decode(img_data) #.decode('base64')
-    # test = img_data.decode("UTF-8")
-    # for i in range(len(test)):
-    #     if test[i] != post['map_blob'][i]:
-    #         print(f"{post['map_blob'][i]} | {test[i]}")
-    # print(img_data)
-    # img_data = img_data
+    # converting the image data passed from the client into a useable image file in memory
+    img_data = post['map_blob']
+    img_data = base64.b64decode(img_data)
     img = BytesIO()
     img.write(img_data)
     img.seek(0)
 
-    name = f"{station_id}.pdf"
-
+    # Creating PDF
     file = createPDF(station_id, img)
     file.seek(0)
-    # file = base64.b64encode(file.read()) # uncomment for button
-    response = FileResponse(file, filename=name)
-    # print(response)
-    # response.set_headers()
-    # response = HttpResponse(file, content_type=f'application/pdf; name="{name}"')
-    response['Content-Disposition'] = f'attachment; filename="{name}"' # these
-    response['Content-Type'] = 'application/pdf'                       # too
-    # print("Sending PDF")
+
+    # Sending PDF to Client
+    response = FileResponse(file)
+    response['Content-Disposition'] = f'attachment'
+    response['Content-Type'] = 'application/pdf'
     return response

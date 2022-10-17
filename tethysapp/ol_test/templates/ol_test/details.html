@@ -25,7 +25,6 @@
             <button class="tablinks" id="graph-monthly">Monthly Average Graph</button>
             <button class="tablinks" id="graph-daily">Daily Average Graph</button>
             <button class="tablinks" id="data-download">Download Data</button>
-            {% comment %} <button class="tablinks" id="pdf">View PDF</button> {% endcomment %}
             
         </div>
     </head>
@@ -33,6 +32,7 @@
 
         <!-- Tab content -->
         <div id="location-content" class="tabcontent table-content">
+            <!-- Table for Location Content list-->
             <table class="center">
                 <tr>
                     {% for item, trash in location_set %}
@@ -45,12 +45,12 @@
                     {% endfor %}
                 </tr>
             </table>
-            {% comment %} <div id="map" class="map"></div> {% endcomment %}
             <div id="examplePlot"></div>
 
         </div>
 
         <div id="size-content" class="tabcontent table-content">
+            <!-- Table for Size Content list-->
             <table class="center">
                 <tr>
                     {% for item, trash in size_set %}
@@ -66,6 +66,7 @@
         </div>
 
         <div id="misc-content" class="tabcontent table-content">
+            <!-- Table for Miscellaneous Content list-->
             <table class="center">
                 <tr>
                     {% for item, trash in misc_set %}
@@ -80,6 +81,7 @@
             </table>
         </div>
 
+        <!-- Graphs! All of them! -->
         <div id="graph-full-content" class="tabcontent graphcontent">
             <div id="full-loader">Loading...</div>
             <div id="graph-full-plot"></div>
@@ -100,6 +102,8 @@
             <div id="graph-daily-plot"></div>
         </div>
 
+        <!-- Download Data section -->
+        <!-- contains settings for PDF download as well as buttons to download PDF & CSV -->
         <div id="data-download-content" class="tabcontent download-content">
             <div class="row">
                 <div class="column col1">
@@ -131,16 +135,16 @@
                         <option value="usgs_imagery">USGS Imagery</option>
                         <option value="usgs_imagery_labels">USGS Imagery (Labels)</option>
                         <option value="esri_world">ESRI World</option>
+                        <option value="stamen_toner">Stamen Toner</option>
+                        <option value="stamen_watercolor">Stamen Watercolor</option>
                     </select>
                 </div>
             </div>
         </div>
+        <!-- value stored at runtime, this container deleted right after-->
+        <!-- you'd have to have a very slow browser to be able to inspect element this container, i think-->
+        <!-- probably some method to get it that i'm unaware of, though-->
         {% csrf_token %}
-        {% comment %} <div id="pdf-content" class="tabcontent pdf-tab-content">
-                <h1>Preview: </h1>
-                <div id="pdf-loader">Loading...</div>
-                <div id="pdf-container"></div>
-        </div> {% endcomment %}
         <div id="map" class="map"></div>
 
     </body>

@@ -63,7 +63,7 @@ $(function() {
     url: 'https://stamen-tiles.a.ssl.fastly.net/toner/{z}/{x}/{y}.png',
     crossOrigin: 'anonymous',
     maxZoom:19
-  })
+  });
 
   var stamen_watercolor_source = new ol.source.XYZ({
     attributions: [new ol.Attribution({
@@ -73,29 +73,11 @@ $(function() {
     url: 'https://stamen-tiles.a.ssl.fastly.net/watercolor/{z}/{x}/{y}.jpg',
     crossOrigin: 'anonymous',
     maxZoom:19
-  })
+  });
 
-  // function getCookie(name) {
-  //   let cookieValue = null;
-  //   if (document.cookie && document.cookie !== '') {
-  //       const cookies = document.cookie.split(';');
-  //       for (let i = 0; i < cookies.length; i++) {
-  //           const cookie = cookies[i].trim();
-  //           // Does this cookie string begin with the name we want?
-  //           if (cookie.substring(0, name.length + 1) === (name + '=')) {
-  //               cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-  //               break;
-  //           }
-  //       }
-  //   }
-  //   return cookieValue;
-  // }
-  // const csrftoken = getCookie('csrftoken');
+  // need this for POST requests with some tethys versions
   const xcsrftoken = document.getElementsByName("csrfmiddlewaretoken")[0].value;
   $("input[name='csrfmiddlewaretoken']").remove();
-  // console.log(document.cookie)
-  // console.log(csrftoken);
-  console.log(xcsrftoken);
 
   // input mechanisms at the bottom of the screen, from right to left
   var eslider = document.getElementById("exponential_slider");
@@ -113,10 +95,15 @@ $(function() {
     let radius = 5;
 
     // Color definition
+    // if null, purple
+    // if >= lake area slider, green
+    // if < lake area slider, red
     if ((area != null) && (area < value)) col = '#b01944';
     else if ((area != null) && (area >= value)) col = '#73e69f';
 
     // Size definition
+    // between 5 and 10, depending on Vol_total
+    // if null, 7.5
     if (size != null) {
       radius = radius - (Math.log2(7.7) / 3) + (Math.log2(parseFloat(size) / 3));
       if (radius > 10)
@@ -124,7 +111,7 @@ $(function() {
     } else radius = 7.5;
 
     // Shape definition
-    if (type == 1) {
+    if (type == 1) { // 1: circle
       img = new ol.style.Circle({
         stroke: new ol.style.Stroke({
           color: '#000'
@@ -134,7 +121,7 @@ $(function() {
         }),
         radius: radius,
       });
-    } else {
+    } else { // 2: triangle, 3: square. if continued, 4: pentagon, 5: hexagon, etc.
       img = new ol.style.RegularShape({
         stroke: new ol.style.Stroke({
           color: '#000'
@@ -144,10 +131,11 @@ $(function() {
         }),
         radius: radius,
         points: type + 1,
-        rotation: ((type % 2) * (Math.PI / 4)) // if odd, rotate 45 degrees
+        rotation: ((type % 2) * (Math.PI / 4)) // if odd, rotate 45 degrees (RADIANS! so weird.)
       });
     }
 
+    // the bulk of this call is making the text look good
     return new ol.style.Style({
       image: img,
       text: new ol.style.Text({
@@ -182,6 +170,8 @@ $(function() {
     style: dynamicStyle,
   });
 
+  // taken from the OpenLayers cluster example
+  // https://openlayers.org/en/v4.6.5/examples/cluster.html?q=cluster
   var styleCache = {};
   var clusterVector = new ol.layer.Vector({
     minResolution: 1225,
@@ -213,6 +203,7 @@ $(function() {
     }
   })
   
+  // setup for creating controls
   window.app = {};
   var app = window.app;
 
@@ -221,9 +212,8 @@ $(function() {
   app.selectControl = function(opt_options) {
     var options = opt_options || {};
 
+    // create a selector to pick tilemaps from
     var selector = document.createElement('select');
-    // selector.setAttribute("id", "select-bg");
-    // format: [[value, Name], [value, Name], ... ]
     const mapValue = [
       ["osm", "OpenStreetMap"],
       ["esri_source", "ESRI"],
@@ -278,7 +268,11 @@ $(function() {
       }
     }
 
+    // add everything necessary to make the selector work
+    // an event listener to do something on a change,
     selector.addEventListener('change', changeMapSource, false);
+
+    // and a container with the proper class and id to hold it all
     var container = document.createElement('div');
     container.className = 'select-bg ol-unselectable ol-control';
     container.setAttribute('id', 'background-select');
@@ -299,6 +293,9 @@ $(function() {
     var container = document.createElement("div");
     container.className = "ol-legend ol-unselectable ol-control";
     // overly complicated, but more flexible if i need to add things later
+    // each of these SVGs just create the shape with the color i'm wanting,
+    // then adds a label right after, explaining what it means
+    // everything that wasn't a circle was fine-tuned to look mostly right
     let svg1 = `<svg width="25" height="25">
                     <circle cx="50%" cy="75%" r="5" fill="#73e69f" stroke="black"/>
                   </svg><span>- Lake Area ≥ </span><span class="slider-text">Slider</span><br>`;
@@ -317,6 +314,8 @@ $(function() {
     let svg6 = `<svg width="25" height="25">
                   <rect x="30%" y="50%" rx="2" width="10" height="10" fill="#73e69f" stroke="black"/>
                 </svg><span>- Lake Type = 3</span><br>`;
+
+    // iteratively add these SVGs to the legend
     const svgList = [svg1, svg2, svg3, svg4, svg5, svg6];
     for (let i = 0; i < svgList.length; i++) {
       let SVGHolder = document.createElement("svg");
@@ -332,6 +331,7 @@ $(function() {
   };
   ol.inherits(app.legend, ol.control.Control);
 
+  // just a function to make the MousePosition formatted properly
   function controlPadding(coords) {
     return ol.coordinate.format(coords, '<div id="mouse-position-text">Lat:&nbsp;&nbsp;{y}<br>Lon:&nbsp;{x}</div>', 4);
   }
@@ -481,13 +481,18 @@ $(function() {
     clusterVector.setSource(clstSource);
     let extent = vecSource.getExtent();
     mainView.fit(extent);
-    map.addControl(new ol.control.ZoomToExtent({"extent": extent, "label": "R"}));
+    map.addControl(new ol.control.ZoomToExtent({
+      "extent": extent, 
+      "label": "R",
+      "tipLabel": "Reset View",
+    }));
   });
 
   const sliderText = [...document.getElementsByClassName('slider-text')];
   sliderText.forEach(element => element.innerText = realSliderVal().toString());
 
   // many many event listeners to update everything that needs to be
+  // i.e. exponential slider, number, linear slider
   eslider.addEventListener('input', function() {
     number.value = realSliderVal();
     lslider.value = number.value;
@@ -518,7 +523,6 @@ $(function() {
 
   var trans = new ol.interaction.Translate({
     features: select.getFeatures(),
-    // layer: vector,
   })
 
   var dragbox = new ol.interaction.DragBox({
@@ -537,8 +541,6 @@ $(function() {
     map2.once('postcompose', function(e) {
       var canvas = e.context.canvas;
       let url = canvas.toDataURL().replace("data:image/png;base64,", "");
-      
-      // document.getElementById("pdf-btn-text").innerText = " Loading..."
       $.ajax({
           url:'/apps/ol-test/pdf/ajax/',
           method: 'POST',
@@ -584,11 +586,9 @@ $(function() {
   // downloads the pdf
   function map2Update() {
     if (loading == loaded) {
-      // console.log(`${loaded} | ${loading}`);
       loaded = 0;
       loading = 0;
       if (pdfON) {
-        // console.log(`PDF Downloading, ${pdfON}`);
         pdfON = 0;
         setTimeout(function() {
           downloadPDF();
@@ -631,7 +631,6 @@ $(function() {
   });
   
   map.addOverlay(popup);
-  // console.log(popup.getElement());
   
   // Functionality for the Enable/Disable Popups button under the Graph menu
   enable_button.addEventListener('click', function() {
@@ -794,8 +793,8 @@ $(function() {
       selector.addEventListener('change', function() {
         selectFeatDD(selector.value, IDList);
       });
-    } else {
-      var opt = document.createElement("option");
+    } else { // if not, create a small one with just the one ID
+        var opt = document.createElement("option");
         opt.setAttribute("value", hylak_id);
         var tex = document.createTextNode(hylak_id);
         opt.appendChild(tex);
@@ -810,9 +809,6 @@ $(function() {
       zoomSel.appendChild(opt);
     }
     zoomSel.selectedIndex = Math.ceil(zoomList.length / 2) - 1;
-
-    // console.log(selector.outerHTML);
-    // console.log(selector.innerHTML);
 
 
     // Save PDF Button on Popover
@@ -890,15 +886,14 @@ $(function() {
         "hylak_id": hylak_id,
         "height": 390,
         "timespan": "total",
-        "mode": 1,
       }
       let graph_data = {
         "hylak_id": hylak_id,
         "height": Math.floor(window.innerHeight * .8),
         "timespan": "total",
-        "mode": 1,
       }
 
+      // loaders, so you know something's happening behind the scenes
       $(".graph-loader").show();
       $(".popup-loader").show();
       $('#plot-content').load(url, popup_data, function() {
@@ -908,21 +903,24 @@ $(function() {
         $(".graph-loader").hide();
       });
 
-      setTimeout( function() {
+      setTimeout( function() { // make graphs resize themselves
         window.dispatchEvent(new Event('resize'));
       }, 500);
 
 
       // putting the buttons and selectors in the popover
-      // also changing the popover title to include all the data it needs, including selector
+      // also changing the popover/graph title to include all the data it needs, including selector
       const hed = document.getElementsByClassName("popover-title")[0];
+      let graphText = document.getElementById("graph-modal-label");
       let span1 = document.createElement("span");
       let span2 = document.createElement("span");
       span1.innerText = "ID: ";
+      graphText.innerText = `ID: ${hylak_id}`;
       hed.append(span1);
       hed.append(selector);
       if (area != null) {
         span2.innerText = ` | Area: ${area}`;
+        graphText.innerText += ` | Area: ${area}`;
         hed.append(span2);
       }
 
@@ -941,6 +939,7 @@ $(function() {
 
   // originally just used to select a feature from the dropdowns
   // now it's used after selecting multiple features
+  // selects the feature passed, then passes both the feature and the IDList to selectOne()
   function selectFeatDD(feat_id, IDList) {
     feat = vecSource.getFeatureById(feat_id);
     select.getFeatures().clear();
@@ -1052,12 +1051,9 @@ $(function() {
       "coordLat": coords[1]
       };
     
-    console.log(data);
-    
     $.ajax({
       url: '/apps/ol-test/update_feats/',
       method: "POST",
-      // headers: {"X-CSRFToken": csrftoken},
       headers: {"X-CSRFToken": xcsrftoken},
       beforeSend: function (xhr) {
           xhr.setRequestHeader("X-CSRFToken", xcsrftoken)
@@ -1116,7 +1112,7 @@ $(function() {
   })
 
   // commented out because i use this a lot for debugging
-  // whenever the map view is changed, show the zoom level
+  // whenever the map view is changed, show the zoom level in the console
   // mainView.on('change', function() {
   //   console.log(mainView.getZoom());
   // })

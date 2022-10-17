@@ -1,6 +1,6 @@
 $(function() {
     // layer setup for changing them
-    // most of these seem to be down today?
+    // i've had issues with ESRI layers recently, not sure what's happening there
     var OSM = new ol.source.OSM({
         crossOrigin:'anonymous',
       });
@@ -55,52 +55,47 @@ $(function() {
         crossOrigin:'anonymous',
     maxZoom:19});
 
-    // function getCookie(name) {
-    // let cookieValue = null;
-    // if (document.cookie && document.cookie !== '') {
-    //     const cookies = document.cookie.split(';');
-    //     for (let i = 0; i < cookies.length; i++) {
-    //         const cookie = cookies[i].trim();
-    //         // Does this cookie string begin with the name we want?
-    //         if (cookie.substring(0, name.length + 1) === (name + '=')) {
-    //             cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-    //             break;
-    //         }
-    //     }
-    // }
-    // return cookieValue;
-    // }
-    // const csrftoken = getCookie('csrftoken');
+    var stamen_toner_source = new ol.source.XYZ({
+      attributions: [new ol.Attribution({
+        html: `Map tiles by <a href="http://stamen.com">Stamen Design</a>, under <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>. 
+              Data by <a href="http://openstreetmap.org">OpenStreetMap</a>, under <a href="http://www.openstreetmap.org/copyright">ODbL</a>.`
+      })],
+      url: 'https://stamen-tiles.a.ssl.fastly.net/toner/{z}/{x}/{y}.png',
+      crossOrigin: 'anonymous',
+      maxZoom:19
+    });
+  
+    var stamen_watercolor_source = new ol.source.XYZ({
+      attributions: [new ol.Attribution({
+        html: `Map tiles by <a href="http://stamen.com">Stamen Design</a>, under <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>.
+              Data by <a href="http://openstreetmap.org">OpenStreetMap</a>, under <a href="http://creativecommons.org/licenses/by-sa/3.0">CC BY SA</a>.`
+      })],
+      url: 'https://stamen-tiles.a.ssl.fastly.net/watercolor/{z}/{x}/{y}.jpg',
+      crossOrigin: 'anonymous',
+      maxZoom:19
+    });
+
+    // need this for POST requests with some tethys versions
     const xcsrftoken = document.getElementsByName("csrfmiddlewaretoken")[0].value;
     $("input[name='csrfmiddlewaretoken']").remove();
 
+    // get the hylak_ID from the URL, not any other way to get that on load currently
     let urlArray = window.location.href.split("/").filter(n => n);
     let Hylak_id = parseInt(urlArray[urlArray.length - 1]);
-    let graphHeight = 1000;
 
     let tablinks = document.getElementsByClassName("tablinks");
 
-    // loading text functionality
-    // $('.loader').hide();
-    // $(document).ajaxSend(function() {
-    //     $('.loader').show();
-    // });
-    // $(document).ajaxComplete(function() {
-    //     $('.loader').hide();
-    // });
-    // console.log(document.getElementById("location-content"));
+    // get latlon from the table, used for PDF generation
     let latitude = parseFloat(document.getElementById("location-set-Latitude").innerText);
     let longitude = parseFloat(document.getElementById("location-set-Longitude").innerText);
-    // console.log(latitude);
-    // console.log(longitude);
     const coords = [longitude, latitude];
 
-
+    // PDF zoom selector
     var zoomSel = document.getElementById("zoom-selector");
     var zoomVal = parseFloat(document.getElementById("zoom-selector").value);
 
 
-    // map setup
+    // map setup for PDF generation
     // setting up layer like this allows us to easily change it later
     var baseLayer = new ol.layer.Tile({
         source: OSM
@@ -158,6 +153,8 @@ $(function() {
     })
 
     // functionality for layer selector
+    // very simple, albeit long, switch case statement
+    // easily expandable though
     document.getElementById("layer-selector").addEventListener('change', function() {
         switch(document.getElementById("layer-selector").value) {
             case "arcgis":
@@ -176,24 +173,30 @@ $(function() {
               baseLayer.setSource(esri_source);
               break;
             case "esri_world":
-              baseLayer.setSource(esri_world_source);
-              break;
+                baseLayer.setSource(esri_world_source);
+                break;
+            case "stamen_toner":
+                baseLayer.setSource(stamen_toner_source)
+                break;
+            case "stamen_watercolor":
+                baseLayer.setSource(stamen_watercolor_source);
+                break;
             default:
-              baseLayer.setSource(OSM);
-          }
+                baseLayer.setSource(OSM);
+        }
     })
 
     // function that downloads pdfs
-    // screenshots the offscreen map div, sends it to server
+    // screenshots the offscreen map container, sends it to server
     // asks server for a pdf
     function downloadPDF() {
         map.once('postcompose', function(e) {
+            // screenshot, converts the map to base64 and removes the header
             var canvas = e.context.canvas;
             let url = canvas.toDataURL().replace("data:image/png;base64,", "");
             $.ajax({
                 url:'/apps/ol-test/pdf/ajax/',
                 method: 'POST',
-                // headers: {"X-CSRFToken": csrftoken},
                 headers: {"X-CSRFToken": xcsrftoken},
                 beforeSend: function (xhr) {
                     xhr.setRequestHeader("X-CSRFToken", xcsrftoken)
@@ -204,19 +207,27 @@ $(function() {
                     'map_blob': url,
                 },
                 dataType: "text",
-                success: function (data) {
+                success: function(data) {
+                    // changes the button text to signal completion
                     document.getElementById("pdf-btn-text").innerText = " Done!"
                     
+                    // takes the data given, converts it to a Blob object,
+                    // then creates a URL for it so we can access the memory object (PDF)
                     const blob = new Blob(data.split(""), {type: 'application/pdf'});
                     const burl = URL.createObjectURL(blob);
                     
+                    // opens the PDF in a new tab
                     window.open(burl, '_blank');
+
+                    // reset the button text after 1.5s
                     setTimeout( function() {
                         document.getElementById("pdf-btn-text").innerText = " Save .pdf"
                     }, 1500);
                 },
                 error: function() {
+                    // changes the button text to signal an error
                     document.getElementById("pdf-btn-text").innerText = " Failed...";
+                    // reset the button text after 1.5s
                     setTimeout( function() {
                         document.getElementById("pdf-btn-text").innerText = " Save .pdf";
                     }, 1500);
@@ -235,14 +246,12 @@ $(function() {
     // if not, neat, the map's updated anyways
     function map2Update() {
         if (loading == loaded) {
-        // console.log(`${loaded} | ${loading}`);
         loaded = 0;
         loading = 0;
         if (pdfON) {
-            // console.log(`PDF Downloading, ${pdfON}`);
             pdfON = 0;
             setTimeout(function() {
-            downloadPDF();
+                downloadPDF();
             }, 500);
         }
         }
@@ -275,22 +284,28 @@ $(function() {
     // functionality for switching tabs in the header
     // basically just shows and hides elements based on what header button is clicked
     function openTab(e) {
+        // get all tab links and content
         let tablinks = document.getElementsByClassName("tablinks");
         let tabcontent = document.getElementsByClassName("tabcontent");
+
+        // get the id of the tab that was just clicked
         let tabId = e.target.getAttribute("id");
-        // console.log(e);
-        // console.log(className);
+
+        // make every single thing inactive
         for (let i = 0; i < tabcontent.length; i++) {
             tabcontent[i].style.display = "none";
         }
         for (let i = 0; i < tablinks.length; i++) {
             $(tablinks[i]).removeClass("active");
         }
+
+        // make the tab and tab content that was just clicked on active
         document.getElementById(tabId + "-content").style.display = "block";
         $(e.currentTarget).addClass("active");
+
+        // if a graph was clicked on, resize the window so it will fill the page
         if (tabId == "graph-full" || tabId == "graph-yearly" || tabId == "graph-monthly" || tabId == "graph-daily" || tabId == "location")
           window.dispatchEvent(new Event('resize'));
-        
     }
     
 
@@ -298,13 +313,18 @@ $(function() {
     // mostly just asks the server for the file,
     // takes it, and forces the browser to download it
     function downloadCSV() {
+        // change button text to be responsive
         document.getElementById("csv-btn-text").innerText = " Loading..."
 			$.ajax({
 				url:'/apps/ol-test/download_station_csv/',
 				method: 'GET',
                 data: { "hylak_id": Hylak_id },
 				success: function (data) {
+                    // change button text again
                     document.getElementById("csv-btn-text").innerText = " Done!"
+
+                    // all of this forces the browser to download the csv
+                    // it creates an element that you can click to download it, clicks it, then deletes it
 					let element = document.createElement('a');
 					let filename = Hylak_id + ".csv"
 					element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(data));
@@ -317,13 +337,15 @@ $(function() {
 
 					document.body.removeChild(element);
                     setTimeout( function() {
+                        // reset the button text
                         document.getElementById("csv-btn-text").innerText = " Save .csv"
                     }, 1500);
 				},
 				error: function() {
-					console.log("Failure...");
+                    // change button text to be responsive
                     document.getElementById("csv-btn-text").innerText = " Failed...";
                     setTimeout( function() {
+                        // reset button text
                         document.getElementById("csv-btn-text").innerText = " Save .csv";
                     }, 1500);
 				}
@@ -335,10 +357,13 @@ $(function() {
         tablinks[i].addEventListener('click', openTab);
     }
     $(tablinks[0]).trigger('click'); // ensures one is selected by default
-    graphHeight = document.querySelector("#location-content").clientHeight - 124; // the graphs are funky, they need a definite height to load in
-    graphWidth = document.querySelector("#location-content").clientWidth - 24; // the graphs are funky, they need a definite height to load in
+
+    // the graphs are funky, they need a definite height or they'll take up about half the space they can
+    // this is adjusted for padding
+    let graphHeight = document.querySelector("#location-content").clientHeight - 124;
 
     // graph loading setup
+    // all the exact same but with different timespans
     let url = "/apps/ol-test/hydrographs/ajax/";
     let full_data = {
         'csrfmiddlewaretoken': xcsrftoken,
@@ -368,22 +393,6 @@ $(function() {
         "timespan": "daily",
         "mode": 0,
     }
-    // graph loading payoff (all of these load the graphs serially in each of their tabs)
-    // $('#graph-normal-plot').load(url, total_data, function() {
-    //     $("#normal-loader").hide();
-    // });
-    // $('#graph-yearly-plot').load(url, yearly_data, function() {
-    //     $("#yearly-loader").hide();
-    // });
-    // $('#graph-monthly-plot').load(url, monthly_data, function() {
-    //     $("#monthly-loader").hide();
-    // });
-    // var retstr;
-    // $('#graph-daily-plot').load(url, daily_data, function(strong) {
-    //     $("#daily-loader").hide();
-    //     // retstr = strong;
-    //     console.log(strong);
-    // });
 
     // useful for two functions, would rather have them easily editable in one spot rather than 2
     let meanColor = '#005fa5' // '#003f5c' // '#0080ff'
@@ -392,12 +401,16 @@ $(function() {
     
     function processGraphData(inList) {
         var traces = [];
+        // for some reason it likes to build itself backwards relative to how i want it
+        // so i just reverse it
         for (let i = inList.length-1; i >= 0; i--) {
+            // set defaults
             let lineColor = meanColor;
             let fillColor = "none";
             let fillType = "none";
             let name = inList[i][0];
 
+            // change defaults if needed
             if ((name == "max")) {
                 lineColor = extremesColor;
                 fillType = "tonexty";
@@ -408,6 +421,7 @@ $(function() {
                 fillType = "tonexty";
                 fillColor = lineColor;
             }
+            // if mean is the only one, then there's no reason to change the defaults
             else if ((name == "mean") && (inList.length > 1)) {
                 fillType = "tonexty";
                 fillColor = stdDevColor;
@@ -422,8 +436,9 @@ $(function() {
                 fillType = "none";
                 fillColor = lineColor;
             }
-            fillColor += "80";
+            fillColor += "80"; // adds transparency to the fill colors, 80 corresponds to half
 
+            // create the trace for the plot based on the data we just created and the data that was passed
             let trace = {
                 name: inList[i][0], // I'd just put name here but i really like how this looks
                 x: inList[i][1][0],
@@ -443,36 +458,37 @@ $(function() {
         return traces;
     }
 
-    /* names: 
-    "max"
-    "+σ"
-    "mean"
-    "-σ"
-    "min"
-    */
-
-    function legendClick(data, divID) {
-        console.log(data);
+    // very complex functionality to make sure the graphs don't ever look dumb
+    // i'm about 95% sure this works properly for every permutation of active traces
+    // there's 120 permutations though so i doubt i've tested them all
+    function legendClick(data) {
+        // get the index of the trace that was just clicked
         let index = data.curveNumber;
+        // create a default object to hold some data
         let json = {"min": {}};
+
+        // fill that object full of important data
         for (let i = 0; i < data.data.length; i++) {
+            // get needed data from passed data object
             let curveName = String(data.data[i]["name"]);
             let vis = String(data.data[i]["visible"]);
-            json[curveName] = {"visible": "yes", "index": 0};
-            json[curveName]["visible"] = vis;
-            json[curveName]["index"] = i;
+
+            // put it in our own data object
+            json[curveName] = {"visible": vis, "index": i};
+
+            // the visibility of what you just clicked only updates after this function is ran
+            // so we have to update our object to reflect that ahead of time
             if (i == index) {
                 if (vis == "true")
                     json[curveName]["visible"] = "legendonly";
                 else
                     json[curveName]["visible"] = "true";
-                
             }
         }
-        // console.log(json);
-        data.data[0]["fill"] = "tonexty";
+        
+        // complicated logic time
 
-        // max visibility:
+        // max's visibility:
         // if every other thing is not visible, make max's fill "none"
         if ((json["+σ"].visible == "legendonly") && (json["mean"].visible == "legendonly") && (json["-σ"].visible == "legendonly") && (json["min"].visible == "legendonly"))
             data.data[json["max"].index].fill = "none";
@@ -486,22 +502,20 @@ $(function() {
         else // otherwise, default
             data.data[json["+σ"].index].fill = "tonexty";
 
-        // mean visibility:
+        // mean's visibility:
+        // generally going to be active, this activates it if it's not
+        data.data[json["mean"].index].fill = "tonexty";
         // if -std not visible but min is, change mean's fill color to extremesColor
         if ((json["-σ"].visible == "legendonly") && (json["min"].visible == "true")){
             data.data[json["mean"].index].fillcolor = extremesColor + "80";
-            data.data[json["mean"].index].fill = "tonexty";
         }
         // if -std is visible, change mean's fill color to stdDevColor
         else if (json["-σ"].visible == "true"){
             data.data[json["mean"].index].fillcolor = stdDevColor + "80";
-            data.data[json["mean"].index].fill = "tonexty";
         }
         // if they're both invisible, make mean's fill "none"
         else if ((json["-σ"].visible == "legendonly") && (json["min"].visible == "legendonly"))
             data.data[json["mean"].index].fill = "none";
-        
-        // console.log(data.data[json["mean"].index].fillColor);
 
         // -std's visibility
         // if min not visible, fill = none. else, fill = tonexty
@@ -511,11 +525,12 @@ $(function() {
             data.data[json["-σ"].index].fill = "tonexty";
 
         // min doesn't have any of this
+        // if min's fill is ever anything other than "none" there's an issue
         data.data[json["min"].index].fill = "none";
     }
 
-
-    var config = {responsive: true};
+    // constants through the ajax calls
+    var config = {responsive: true, showTips: false};
     var graphMargin = {
         l: 100,
         r: 100,
@@ -523,6 +538,15 @@ $(function() {
         t: 50,
         pad: 4,
     }
+
+    // all of the ajax calls should look about the same, with ust a few minor differences
+    // those differences are the title name and things to do with the x-axis,
+    // the data it's retrieving, and where it goes
+
+    // also all of these disable the functionality with the graphs where you can
+    // double-click a trace in the legend and only show that one
+    // it causes some weird bugs with my legendClick() logic that i do not want to
+    // fix or create another function for
 
     $.ajax(url, {
         method: 'POST',
@@ -536,10 +560,11 @@ $(function() {
             var layout = {
                 height: graphHeight,
                 margin: graphMargin,
-                title: `Full Hydrograph for ${Hylak_id}`,
+                title: `Historical Surface Area for ${Hylak_id}`,
+                xaxis:  {'title': 'Time (date)'},
+                yaxis:  {'title': 'Surface Area (km²)'},
                 xaxis: {
                     tickformat: '%b-%d-%Y',
-                    // tick0: '2001-01-01',
                     tickangle: 15,
                     dtick: "M12",
                 },
@@ -547,10 +572,8 @@ $(function() {
             Plotly.newPlot('graph-full-plot', processGraphData(data['data']), layout, config);
             $("#full-loader").hide();
             var myPlot = document.getElementById('graph-full-plot');
-            myPlot.on('plotly_legendclick', function(data) {
-                legendClick(data, 'graph-full-plot')
-                return false
-            });
+            myPlot.on('plotly_legendclick', () => false);
+            myPlot.on('plotly_legenddoubleclick', () => false);
         }
     });
 
@@ -566,14 +589,17 @@ $(function() {
             var layout = {
                 height: graphHeight,
                 margin: graphMargin,
-                title: `Yearly Hydrograph for ${Hylak_id}`,
+                title: `Yearly Surface Area for ${Hylak_id}`,
+                xaxis:  {'title': 'Time (date)'},
+                yaxis:  {'title': 'Surface Area (km²)'},
             };
             Plotly.newPlot('graph-yearly-plot', processGraphData(data['data']), layout, config);
             $("#yearly-loader").hide();
             var myPlot = document.getElementById('graph-yearly-plot');
             myPlot.on('plotly_legendclick', function(data) {
-                legendClick(data, 'graph-yearly-plot')
+                legendClick(data)
             });
+            myPlot.on('plotly_legenddoubleclick', () => false);
         }
     });
 
@@ -589,7 +615,9 @@ $(function() {
             var layout = {
                 height: graphHeight,
                 margin: graphMargin,
-                title: `Monthly Hydrograph for ${Hylak_id}`,
+                title: `Monthly Surface Area for ${Hylak_id}`,
+                xaxis:  {'title': 'Time (date)'},
+                yaxis:  {'title': 'Surface Area (km²)'},
                 xaxis: {
                     tickformat: '%b'
                 },
@@ -598,8 +626,9 @@ $(function() {
             $("#monthly-loader").hide();
             var myPlot = document.getElementById('graph-monthly-plot');
             myPlot.on('plotly_legendclick', function(data) {
-                legendClick(data, 'graph-monthly-plot')
+                legendClick(data)
             });
+            myPlot.on('plotly_legenddoubleclick', () => false);
         }
     });
 
@@ -615,54 +644,29 @@ $(function() {
             var layout = {
                 height: graphHeight,
                 margin: graphMargin,
-                title: `Daily Hydrograph for ${Hylak_id}`,
+                title: `Daily Surface Area for ${Hylak_id}`,
+                xaxis:  {'title': 'Time (date)'},
+                yaxis:  {'title': 'Surface Area (km²)'},
                 xaxis: {
                     tickformat: '%b-%d'
                 }
             };
-            // console.log(processGraphData(data['data']));
             Plotly.newPlot('graph-daily-plot', processGraphData(data['data']), layout, config);
             $("#daily-loader").hide();
             var myPlot = document.getElementById('graph-daily-plot');
             myPlot.on('plotly_legendclick', function(data) {
-                legendClick(data, 'graph-daily-plot')
+                legendClick(data)
             });
+            myPlot.on('plotly_legenddoubleclick', () => false);
         }
     });
-
-    // console.log(retstr);
-
-    // var trace1 = {
-    //     x: [1, 2, 3, 4],
-    //     y: [10, 15, 13, 17],
-    //     mode: 'markers',
-    //     type: 'scatter'
-    // };
-    
-    // var trace2 = {
-    //     x: [2, 3, 4, 5],
-    //     y: [16, 5, 11, 9],
-    //     mode: 'lines',
-    //     type: 'scatter'
-    // };
-    
-    // var trace3 = {
-    //     x: [1, 2, 3, 4],
-    //     y: [12, 9, 15, 12],
-    //     mode: 'lines+markers',
-    //     type: 'scatter'
-    // };
-      
-    // var data = [trace1, trace2, trace3];
-    // Plotly.newPlot('examplePlot', data);
-    // Plotly.newPlot('myDiv', data);
 
     // simple functionality for the download buttons
     document.getElementById("download-pdf-btn").addEventListener('click', function() {
         document.getElementById("pdf-btn-text").innerText = " Loading..."
         pdfON = 1;
         setTimeout(function() {
-            if (loading == loaded) {
+            if (loading == loaded) { // if it isn't called soon, call the update function ourselves
                 map2Update();
             }
         }, 100);
