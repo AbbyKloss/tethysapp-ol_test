@@ -886,11 +886,13 @@ $(function() {
         "hylak_id": hylak_id,
         "height": 390,
         "timespan": "total",
+        mode: 1,
       }
       let graph_data = {
         "hylak_id": hylak_id,
         "height": Math.floor(window.innerHeight * .8),
         "timespan": "total",
+        mode: 1,
       }
 
       // loaders, so you know something's happening behind the scenes

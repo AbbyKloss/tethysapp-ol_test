@@ -529,8 +529,46 @@ $(function() {
         data.data[json["min"].index].fill = "none";
     }
 
+    // resizes all graphs on a resize event
+    function plotResize() {
+        // setup
+        const graphDivs = [
+            'graph-full-plot',
+            'graph-yearly-plot',
+            'graph-monthly-plot',
+            'graph-daily-plot',
+        ]
+        let newGraphHeight = 0;
+        let newGraphWidth = 0;
+        
+        // get all the tablinks
+        let tablinks = document.getElementsByClassName("tablinks");
+
+        // figure out which tablink is active
+        // when found, get its height and width (minus padding), then break
+        for (let i = 0; i < tablinks.length; i++) {
+            if (tablinks[i].classList.value.includes("active")) {
+                newGraphHeight = document.querySelector(`#${tablinks[i].id}-content`).clientHeight - 124;
+                newGraphWidth = document.querySelector(`#${tablinks[i].id}-content`).clientWidth - 22;
+                break;
+            }
+        }
+
+        // set each graph's dimensions to these new values
+        for (let i = 0; i < graphDivs.length; i++) {
+            let update = {
+                height: newGraphHeight,
+                width: newGraphWidth
+            }
+            Plotly.relayout(graphDivs[i], update);
+        }
+    }
+
+    // make plotResize actually happen on a resize event
+    window.addEventListener('resize', plotResize)
+
     // constants through the ajax calls
-    var config = {responsive: true, showTips: false};
+    var config = {showTips: false};
     var graphMargin = {
         l: 100,
         r: 100,
@@ -574,6 +612,9 @@ $(function() {
             var myPlot = document.getElementById('graph-full-plot');
             myPlot.on('plotly_legendclick', () => false);
             myPlot.on('plotly_legenddoubleclick', () => false);
+            myPlot.on('resize', function() {
+                plotResize();
+            });
         }
     });
 
@@ -600,6 +641,9 @@ $(function() {
                 legendClick(data)
             });
             myPlot.on('plotly_legenddoubleclick', () => false);
+            myPlot.on('resize', function() {
+                plotResize();
+            });
         }
     });
 
@@ -629,6 +673,9 @@ $(function() {
                 legendClick(data)
             });
             myPlot.on('plotly_legenddoubleclick', () => false);
+            myPlot.on('resize', function() {
+                plotResize();
+            });
         }
     });
 
@@ -658,6 +705,9 @@ $(function() {
                 legendClick(data)
             });
             myPlot.on('plotly_legenddoubleclick', () => false);
+            myPlot.on('resize', function() {
+                plotResize();
+            });
         }
     });
 
