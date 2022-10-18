@@ -94,7 +94,7 @@ $(function() {
     let value = number.value;
     let col = '#5118ad';
     let img = undefined;
-    let radius = 5;
+    let radius = 7.5;
 
     // Color definition
     // if null, purple
@@ -107,10 +107,9 @@ $(function() {
     // between 5 and 10, depending on Vol_total
     // if null, 7.5
     if (size != null) {
-      radius = radius - (Math.log2(7.7) / 3) + (Math.log2(parseFloat(size) / 3));
-      if (radius > 10)
-        radius = 10;
-    } else radius = 7.5;
+      radius = 5 - (Math.log2(7.7) / 3) + (Math.log2(parseFloat(size)) / 3);
+      if (radius > 10) radius = 10;
+    }
 
     // Shape definition
     if (type == 1) { // 1: circle
@@ -137,20 +136,22 @@ $(function() {
       });
     }
 
-    // the bulk of this call is making the text look good
+    // makes text legible regardless of background
+    let text = new ol.style.Text({
+      offsetY: 10,
+      text: feat.getProperties()['Hylak_id'].toString(),
+      stroke: new ol.style.Stroke({
+        color: '#000',
+        width: 3,
+      }),
+      fill: new ol.style.Fill({
+        color: '#fff'
+      }),
+    });
+
     return new ol.style.Style({
       image: img,
-      text: new ol.style.Text({
-        offsetY: 10,
-        text: feat.getProperties()['Hylak_id'].toString(),
-        stroke: new ol.style.Stroke({
-          color: '#000',
-          width: 3,
-        }),
-        fill: new ol.style.Fill({
-          color: '#fff'
-        }),
-      }),
+      text: text,
     })
   }
 

@@ -61,7 +61,7 @@
                 </tr>
                 <tr>
                     {% for trash, item in size_set %}
-                        <td>{{ item }}</td>
+                        <td id="size-set-{{trash}}">{{ item }}</td>
                     {% endfor %}
                 </tr>
             </table>
@@ -77,7 +77,7 @@
                 </tr>
                 <tr>
                     {% for trash, item in misc_set %}
-                        <td>{{ item }}</td>
+                        <td id="misc-set-{{trash}}">{{ item }}</td>
                     {% endfor %}
                 </tr>
             </table>

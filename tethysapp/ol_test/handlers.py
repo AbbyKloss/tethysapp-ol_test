@@ -81,24 +81,46 @@ def create_hydrograph(hylakID: str, filename: str, timespan="total", heightIn='5
     
     # manipulate data if necessary
     # make all the data easy for plotly to read
-    # make it rather tedious for a human to read (or write)
-    # all of this data is used for most uses of this function, so this is truly necessary
-    # i will just be commenting timespan=="daily" and the else statement, for my own sanity
     # each of the if statements are very similar with minor adjustments
-    if timespan == "daily":
+    if ((timespan == "daily") or (timespan == "monthly") or (timespan == "yearly")):
         # setup
-        name = f"Daily Surface Area for {hylakID}"
-        # condense the dates down to just the days of the year
-        df["Dates"] = pd.to_datetime(df["Dates"], format="%Y-%m-%d").dt.strftime("%j")
+        name = ""
+        gb = None
 
-        # condense the data as well
-        gb = df.groupby(["Dates"])
+        if (timespan == "daily"):
+            # setup
+            name = f"Daily Surface Area for {hylakID}"
+            # condense the dates down to just the days of the year
+            df["Dates"] = pd.to_datetime(df["Dates"], format="%Y-%m-%d").dt.strftime("%j")
 
-        # convert the dates to something more readable
-        # in this case, the format is [abbreviated month]-[date]
-        time = list(set(df["Dates"].to_list()))
-        time = sorted([datetime.strptime(dt, "%j") for dt in time])
-        time = [dt.strftime("%b-%d") for dt in time]
+            # condense the data as well
+            gb = df.groupby(["Dates"])
+
+            # convert the dates to something more readable
+            # in this case, the format is [abbreviated month]-[date]
+            time = list(set(df["Dates"].to_list()))
+            time = sorted([datetime.strptime(dt, "%j") for dt in time])
+            time = [dt.strftime("%b-%d") for dt in time]
+
+        elif (timespan == "monthly"): # same as "daily" with minor adjustments
+            name = f"Monthly Surface Area for {hylakID}"
+            df["Dates"] = pd.to_datetime(df["Dates"], format="%Y-%m-%d").dt.strftime("%m")
+
+            gb = df.groupby(["Dates"])
+
+            time = list(set(df["Dates"].to_list()))
+            time = sorted([datetime.strptime(dt, "%m") for dt in time])
+            time = [dt.strftime("%b") for dt in time]
+
+        elif (timespan == "yearly"): # same as "daily" with minor adjustments
+            name = f"Yearly Surface Area for {hylakID}"
+            df["Dates"] = pd.to_datetime(df["Dates"], format="%Y-%m-%d").dt.strftime("%Y")
+
+            gb = df.groupby(["Dates"])
+
+            time = list(set(df["Dates"].to_list()))
+            time = sorted([datetime.strptime(dt, "%Y") for dt in time])
+            time = [dt.strftime("%Y") for dt in time]
 
         # put all of the statistical information into different lists so we can make different traces from each list
         ymax = gb.max()[hylakID].to_list()
@@ -116,9 +138,11 @@ def create_hydrograph(hylakID: str, filename: str, timespan="total", heightIn='5
             ["min", [time, ymin]],
         ]
 
+        transpExtremes = f"rgba{str(ImageColor.getrgb(extremesColor + '80')).replace(' ','').replace('128', '0.5')}"
+        transpStdDev = f"rgba{str(ImageColor.getrgb(stdDevColor + '80')).replace(' ','').replace('128', '0.5')}"
+
         # create dictionaries for each of the lists to easily pass data into the graph creation functions
         # makes it easier to read and adjust each value
-        # these are all the exact same in each if statement
         # definitions for all of the keys are in Plotly documentation, look for graph_object.Scatter()
         maxDict = {
             "x": time,
@@ -126,7 +150,7 @@ def create_hydrograph(hylakID: str, filename: str, timespan="total", heightIn='5
             "line": {'color': extremesColor, 'width': 4, 'shape':'spline'},
             "name": "max",
             "fill": "tonexty",
-            "fillcolor": f"rgba{str(ImageColor.getrgb(extremesColor + '80')).replace(' ','').replace('128', '0.5')}"
+            "fillcolor": transpExtremes
         }
 
         posStdvDict = {
@@ -135,7 +159,7 @@ def create_hydrograph(hylakID: str, filename: str, timespan="total", heightIn='5
             "line": {'color': stdDevColor, 'width': 4, 'shape':'spline'},
             "name": "+σ",
             "fill": "tonexty",
-            "fillcolor": f"rgba{str(ImageColor.getrgb(stdDevColor + '80')).replace(' ','').replace('128', '0.5')}"
+            "fillcolor": transpStdDev
         }
 
         meanDict = {
@@ -144,7 +168,7 @@ def create_hydrograph(hylakID: str, filename: str, timespan="total", heightIn='5
             "line": {'color': meanColor, 'width': 4, 'shape':'spline'},
             "name": "mean",
             "fill": "tonexty",
-            "fillcolor": f"rgba{str(ImageColor.getrgb(stdDevColor + '80')).replace(' ','').replace('128', '0.5')}"
+            "fillcolor": transpStdDev # the fill only fills downward, so we have to adjust for that
         }
 
         negStdvDict = {
@@ -153,7 +177,7 @@ def create_hydrograph(hylakID: str, filename: str, timespan="total", heightIn='5
             "line": {'color': stdDevColor, 'width': 4, 'shape':'spline'},
             "name": "-σ",
             "fill": "tonexty",
-            "fillcolor": f"rgba{str(ImageColor.getrgb(extremesColor + '80')).replace(' ','').replace('128', '0.5')}"
+            "fillcolor": transpExtremes
         }
 
         minDict = {
@@ -164,161 +188,6 @@ def create_hydrograph(hylakID: str, filename: str, timespan="total", heightIn='5
         }
 
         # create the scatter plots and append them to a containing list, iteratively
-        itemList = [maxDict, posStdvDict, meanDict, negStdvDict, minDict]
-
-        for item in reversed(itemList):
-            hydrograph_go = go.Scatter(**item)
-            plot_data.append(hydrograph_go)
-        
-
-    elif timespan == "monthly":
-        name = f"Monthly Surface Area for {hylakID}"
-        df["Dates"] = pd.to_datetime(df["Dates"], format="%Y-%m-%d").dt.strftime("%m")
-
-        gb = df.groupby(["Dates"])
-
-        time = list(set(df["Dates"].to_list()))
-        time = sorted([datetime.strptime(dt, "%m") for dt in time])
-        time = [dt.strftime("%b") for dt in time]
-
-        ymax = gb.max()[hylakID].to_list()
-        yPosStdv = gb.agg(lambda x: x.mean() + x.std())[hylakID].to_list()
-        ymean = gb.mean()[hylakID].to_list()
-        yNegStdv = gb.agg(lambda x: x.mean() - x.std())[hylakID].to_list()
-        ymin = gb.min()[hylakID].to_list()
-
-        fullDataList = [
-            ["max", [time, ymax]],
-            ["+σ", [time, yPosStdv]],
-            ["mean", [time, ymean]],
-            ["-σ", [time, yNegStdv]],
-            ["min", [time, ymin]],
-        ]
-
-        maxDict = {
-            "x": time,
-            "y": ymax,
-            "line": {'color': extremesColor, 'width': 4, 'shape':'spline'},
-            "name": "max",
-            "fill": "tonexty",
-            "fillcolor": f"rgba{str(ImageColor.getrgb(extremesColor + '80')).replace(' ','').replace('128', '0.5')}"
-        }
-
-        posStdvDict = {
-            "x": time,
-            "y": yPosStdv,
-            "line": {'color': stdDevColor, 'width': 4, 'shape':'spline'},
-            "name": "+σ",
-            "fill": "tonexty",
-            "fillcolor": f"rgba{str(ImageColor.getrgb(stdDevColor + '80')).replace(' ','').replace('128', '0.5')}"
-        }
-
-        meanDict = {
-            "x": time,
-            "y": ymean,
-            "line": {'color': meanColor, 'width': 4, 'shape':'spline'},
-            "name": "mean",
-            "fill": "tonexty",
-            "fillcolor": f"rgba{str(ImageColor.getrgb(stdDevColor + '80')).replace(' ','').replace('128', '0.5')}"
-        }
-
-        negStdvDict = {
-            "x": time,
-            "y": yNegStdv,
-            "line": {'color': stdDevColor, 'width': 4, 'shape':'spline'},
-            "name": "-σ",
-            "fill": "tonexty",
-            "fillcolor": f"rgba{str(ImageColor.getrgb(extremesColor + '80')).replace(' ','').replace('128', '0.5')}"
-        }
-
-        minDict = {
-            "x": time,
-            "y": ymin,
-            "line": {'color': extremesColor, 'width': 4, 'shape':'spline'},
-            "name": "min",
-        }
-
-        itemList = [maxDict, posStdvDict, meanDict, negStdvDict, minDict]
-
-        def update_trace(trace, points, selector):
-            print(trace)
-            for item in trace:
-                print(item)
-
-        for item in reversed(itemList):
-            hydrograph_go = go.Scatter(**item)
-            hydrograph_go.on_click(update_trace)
-            plot_data.append(hydrograph_go)
-        
-
-
-    elif timespan == "yearly":
-        name = f"Yearly Surface Area for {hylakID}"
-        df["Dates"] = pd.to_datetime(df["Dates"], format="%Y-%m-%d").dt.strftime("%Y")
-
-        gb = df.groupby(["Dates"])
-
-        time = list(set(df["Dates"].to_list()))
-        time = sorted([datetime.strptime(dt, "%Y") for dt in time])
-        time = [dt.strftime("%Y") for dt in time]
-
-        ymax = gb.max()[hylakID].to_list()
-        yPosStdv = gb.agg(lambda x: x.mean() + x.std())[hylakID].to_list()
-        ymean = gb.mean()[hylakID].to_list()
-        yNegStdv = gb.agg(lambda x: x.mean() - x.std())[hylakID].to_list()
-        ymin = gb.min()[hylakID].to_list()
-
-        fullDataList = [
-            ["max", [time, ymax]],
-            ["+σ", [time, yPosStdv]],
-            ["mean", [time, ymean]],
-            ["-σ", [time, yNegStdv]],
-            ["min", [time, ymin]],
-        ]
-
-        maxDict = {
-            "x": time,
-            "y": ymax,
-            "line": {'color': extremesColor, 'width': 4, 'shape':'spline'},
-            "name": "max",
-            "fill": "tonexty",
-            "fillcolor": f"rgba{str(ImageColor.getrgb(extremesColor + '80')).replace(' ','').replace('128', '0.5')}"
-        }
-
-        posStdvDict = {
-            "x": time,
-            "y": yPosStdv,
-            "line": {'color': stdDevColor, 'width': 4, 'shape':'spline'},
-            "name": "+σ",
-            "fill": "tonexty",
-            "fillcolor": f"rgba{str(ImageColor.getrgb(stdDevColor + '80')).replace(' ','').replace('128', '0.5')}"
-        }
-
-        meanDict = {
-            "x": time,
-            "y": ymean,
-            "line": {'color': meanColor, 'width': 4, 'shape':'spline'},
-            "name": "mean",
-            "fill": "tonexty",
-            "fillcolor": f"rgba{str(ImageColor.getrgb(stdDevColor + '80')).replace(' ','').replace('128', '0.5')}"
-        }
-
-        negStdvDict = {
-            "x": time,
-            "y": yNegStdv,
-            "line": {'color': stdDevColor, 'width': 4, 'shape':'spline'},
-            "name": "-σ",
-            "fill": "tonexty",
-            "fillcolor": f"rgba{str(ImageColor.getrgb(extremesColor + '80')).replace(' ','').replace('128', '0.5')}"
-        }
-
-        minDict = {
-            "x": time,
-            "y": ymin,
-            "line": {'color': extremesColor, 'width': 4, 'shape':'spline'},
-            "name": "min",
-        }
-
         itemList = [maxDict, posStdvDict, meanDict, negStdvDict, minDict]
 
         for item in reversed(itemList):

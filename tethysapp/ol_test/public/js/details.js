@@ -109,33 +109,69 @@ $(function() {
             }), ],
     });
 
-    // vector layer with a style
-    // each point is green with a black outline
+    // each point is green (possibly purple) with a black outline
     // has text below, white with black outline
-    var vector = new ol.layer.Vector({
-        source: vecSource,
-        style: new ol.style.Style({
-            image: new ol.style.Circle({
-              stroke: new ol.style.Stroke({
-                color: '#000'
-              }),
-              fill: new ol.style.Fill({
-                color: '#73e69f'
-              }),
-              radius: 5,
-            }),
-            text: new ol.style.Text({
-                offsetY: 10,
-                text: Hylak_id.toString(),
+    function dynamicStyle() { // ported from map.js
+        let lakeType = parseInt(document.getElementById("misc-set-Lake Type").innerText);
+        let lakeVol = parseFloat(document.getElementById("size-set-Total Volume").innerText);
+        let lakeArea = parseFloat(document.getElementById("size-set-Lake Area").innerText);
+        let col = '#73e69f'; // green
+        let radius = 7.5;
+        let img = undefined;
+
+        if (!isNaN(lakeVol)) {
+            console.log("changing radius");
+            radius = 5 - (Math.log2(7.7) / 3) + (Math.log2(lakeVol) / 3)
+            if (radius > 10) radius = 10;
+        }
+
+        if (isNaN(lakeArea)) col = '#5118ad'; // purple
+
+        if (lakeType == 1) { // 1: circle
+            img = new ol.style.Circle({
                 stroke: new ol.style.Stroke({
-                  color: '#000',
-                  width: 3,
+                  color: '#000'
                 }),
                 fill: new ol.style.Fill({
-                  color: '#fff'
+                  color: '#73e69f'
                 }),
+                radius: radius,
               })
+        } else { // 2: triangle, 3: square. if continued: 4: pentagon, 5: hexagon, etc.
+            img = new ol.style.RegularShape({
+                stroke: new ol.style.Stroke({
+                    color: '#000'
+                }),
+                fill: new ol.style.Fill({
+                    color: col
+                }),
+                radius: radius,
+                points: lakeType + 1,
+                rotation: ((lakeType % 2) * (Math.PI / 4)) // if odd, rotate 45 degrees (RADIANS! so weird.)
+            });
+        }
+        let text = new ol.style.Text({
+            offsetY: 10,
+            text: Hylak_id.toString(),
+            stroke: new ol.style.Stroke({
+              color: '#000',
+              width: 3,
+            }),
+            fill: new ol.style.Fill({
+              color: '#fff'
+            }),
           })
+
+        return new ol.style.Style ({
+            image: img,
+            text: text,
+        })
+    }
+
+    // vector layer with a style function
+    var vector = new ol.layer.Vector({
+        source: vecSource,
+        style: dynamicStyle,
     });
 
     var map = new ol.Map({
@@ -284,6 +320,7 @@ $(function() {
 
     // functionality for switching tabs in the header
     // basically just shows and hides elements based on what header button is clicked
+    const resizeList = [1, 1, 1, 1];
     function openTab(e) {
         // get all tab links and content
         let tablinks = document.getElementsByClassName("tablinks");
@@ -304,9 +341,22 @@ $(function() {
         document.getElementById(tabId + "-content").style.display = "block";
         $(e.currentTarget).addClass("active");
 
+
+        // i'm overengineering this
         // if a graph was clicked on, resize the window so it will fill the page
-        if (tabId == "graph-full" || tabId == "graph-yearly" || tabId == "graph-monthly" || tabId == "graph-daily" || tabId == "location")
-          window.dispatchEvent(new Event('resize'));
+        // but only do it the first time that tab was clicked on,
+        // otherwise it has marginally worse runtime every time the tab is clicked
+        // basically it stutters for half a second and that got on my nerves
+        const graphList = ["graph-full",
+                        "graph-yearly",
+                        "graph-monthly",
+                        "graph-daily"]
+
+        let index = graphList.indexOf(tabId);
+        if ((index >= 0) && resizeList[index]){
+            resizeList[index] = 0;
+            window.dispatchEvent(new Event('resize'));
+        }
     }
     
 
@@ -362,35 +412,41 @@ $(function() {
     // the graphs are funky, they need a definite height or they'll take up about half the space they can
     // this is adjusted for padding
     let graphHeight = document.querySelector("#location-content").clientHeight - 124;
+    let graphWidth = document.querySelector(`#location-content`).clientWidth - 22;
+    console.log(`${graphHeight}x${graphWidth}`);
 
     // graph loading setup
     // all the exact same but with different timespans
     let url = "/apps/ol-test/hydrographs/ajax/";
     let full_data = {
-        'csrfmiddlewaretoken': xcsrftoken,
+        "csrfmiddlewaretoken": xcsrftoken,
         "hylak_id": Hylak_id,
         "height": graphHeight,
+        "width": graphWidth,
         "timespan": "total",
         "mode": 0,
     }
     let yearly_data = {
-        'csrfmiddlewaretoken': xcsrftoken,
+        "csrfmiddlewaretoken": xcsrftoken,
         "hylak_id": Hylak_id,
         "height": graphHeight,
+        "width": graphWidth,
         "timespan": "yearly",
         "mode": 0,
     }
     let monthly_data = {
-        'csrfmiddlewaretoken': xcsrftoken,
+        "csrfmiddlewaretoken": xcsrftoken,
         "hylak_id": Hylak_id,
         "height": graphHeight,
+        "width": graphWidth,
         "timespan": "monthly",
         "mode": 0,
     }
     let daily_data = {
-        'csrfmiddlewaretoken': xcsrftoken,
+        "csrfmiddlewaretoken": xcsrftoken,
         "hylak_id": Hylak_id,
         "height": graphHeight,
+        "width": graphWidth,
         "timespan": "daily",
         "mode": 0,
     }
@@ -498,10 +554,13 @@ $(function() {
         
         // +std's visibility
         // if everything below "+σ" is invisible, turn off fill as well
+        // except if min is visible, then turn the fillcolor to extremesColor
+        data.data[json["+σ"].index].fillcolor = stdDevColor + "80";
+        data.data[json["+σ"].index].fill = "tonexty";
         if ((json["mean"].visible == "legendonly") && (json["-σ"].visible == "legendonly") && (json["min"].visible == "legendonly"))
             data.data[json["+σ"].index].fill = "none";
-        else // otherwise, default
-            data.data[json["+σ"].index].fill = "tonexty";
+        else if ((json["mean"].visible == "legendonly") && (json["-σ"].visible == "legendonly") && (json["min"].visible == "true"))
+            data.data[json["+σ"].index].fillcolor = extremesColor + "80";
 
         // mean's visibility:
         // generally going to be active, this activates it if it's not
@@ -613,9 +672,6 @@ $(function() {
             var myPlot = document.getElementById('graph-full-plot');
             myPlot.on('plotly_legendclick', () => false);
             myPlot.on('plotly_legenddoubleclick', () => false);
-            myPlot.on('resize', function() {
-                plotResize();
-            });
         }
     });
 
@@ -642,9 +698,6 @@ $(function() {
                 legendClick(data)
             });
             myPlot.on('plotly_legenddoubleclick', () => false);
-            myPlot.on('resize', function() {
-                plotResize();
-            });
         }
     });
 
@@ -674,9 +727,6 @@ $(function() {
                 legendClick(data)
             });
             myPlot.on('plotly_legenddoubleclick', () => false);
-            myPlot.on('resize', function() {
-                plotResize();
-            });
         }
     });
 
@@ -706,9 +756,6 @@ $(function() {
                 legendClick(data)
             });
             myPlot.on('plotly_legenddoubleclick', () => false);
-            myPlot.on('resize', function() {
-                plotResize();
-            });
         }
     });
 
