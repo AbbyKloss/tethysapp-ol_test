@@ -49,16 +49,17 @@
           <h5>Lake Area Sliders</h5>
           <p>
             The sliders at the bottom of the screen all set a threshold for the lake area of each point.
-            You can change the threshold by <i>slowly</i> moving any of the sliders. The rightmost one is recommended for this, as it has been somewhat tuned for the dataset presented here.
-            Any points that are red have lake areas that are above the threshold, any points that are green have lake areas below the threshold.
+            You can change the threshold by moving any of the sliders. The rightmost one is recommended for this, as it has been somewhat tuned for the dataset presented here.
+            Any points that are red have lake areas that are above the threshold, any points that are green have lake areas below the threshold. Purple points have no recorded lake area.
           </p>
           <h5>Point Graphs</h5>
           <p>
-            Clicking on a point creates a popup with the point ID, the lake area of that point, and a hydrograph for that point. Clicking the <span class="glyphicon glyph-black glyphicon-stats"></span> button will also show the graph, as well as an option to disable the popups or view details. You may also select multiple points by clicking and dragging the mouse while holding Ctrl (⌘ on Mac), although no graph will be shown for these points.
+            Clicking on a point creates a popup with the point ID, the lake area of that point, a hydrograph for that point, and a few extra options. Clicking the <span class="glyphicon glyph-black glyphicon-stats"></span> button will also show the graph, as well as an option to disable the popups or view details. You may also select multiple points by clicking and dragging the mouse while holding Ctrl (⌘ on Mac). In this case, only one point will be selected at a time, starting with the point with the lowest ID, but in the top left corner of the popup, there will be a dropdown to select any other point in that selection.
           </p>
           <h5>Changing Point Coordinates</h5>
           <p>
-            You are able to move each point around by selecting a point then clicking and dragging the point around. Changes are saved automatically. The <span class="glyphicon glyph-black glyphicon-floppy-disk"></span> button shows changes made since the start of the session.
+            You are able to move each point around by selecting a point, clicking <b>Edit Point</b> if it appears, then clicking and dragging the point around. Changes are saved automatically. The <span class="glyphicon glyph-black glyphicon-floppy-disk"></span> button shows changes made since the start of the session. <br>
+            Note: If <b>Edit Point</b> does not appear, you need to select the feature again in such a way that it is the only feature selected, i.e. there are no other features in the ID selector in the top left of the popup.
           </p>
         </div>
         <div class="modal-footer">

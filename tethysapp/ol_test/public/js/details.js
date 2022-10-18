@@ -120,7 +120,6 @@ $(function() {
         let img = undefined;
 
         if (!isNaN(lakeVol)) {
-            console.log("changing radius");
             radius = 5 - (Math.log2(7.7) / 3) + (Math.log2(lakeVol) / 3)
             if (radius > 10) radius = 10;
         }
@@ -413,7 +412,6 @@ $(function() {
     // this is adjusted for padding
     let graphHeight = document.querySelector("#location-content").clientHeight - 124;
     let graphWidth = document.querySelector(`#location-content`).clientWidth - 22;
-    console.log(`${graphHeight}x${graphWidth}`);
 
     // graph loading setup
     // all the exact same but with different timespans

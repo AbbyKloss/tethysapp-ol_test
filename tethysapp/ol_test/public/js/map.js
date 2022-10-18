@@ -307,7 +307,7 @@ $(function() {
                 </svg><span>- Lake Area < </span><span class="slider-text">Slider</span><br>`;
     let svg3 = `<svg width="25" height="25">
                   <circle cx="50%" cy="75%" r="5" fill="#5118ad" stroke="black"/>
-                </svg><span>- Lake Area = null</span><br>`;
+                </svg><span>- Lake Area is undefined</span><br>`;
     let svg4 = `<svg width="25" height="25">
                   <circle cx="50%" cy="75%" r="5" fill="#73e69f" stroke="black"/>
                 </svg><span>- Lake Type = 1</span><br>`;
@@ -676,10 +676,8 @@ $(function() {
   function popoverPosition(popover, trigger) { // popover dimensions: 832x502, arrow dims: 20x10
     let pixel = map.getPixelFromCoordinate(glob_coords);
     let size = map.getSize();
-    let dims = [832 + 20, 502 + 10];
+    let dims = [832 + 20, 502 + 10]; // dimensions of the popover + padding
     let retstr = "top";
-    console.log(pixel); // 1 is height, 0 is width
-    console.log(size);  // "                     "
     if ((pixel[1] - dims[1]) >= 0) // if the popover won't be too high up...
       retstr = "top";
     else if ((pixel[1] + dims[1]) < size[1]) // if the popover won't be too far down...
@@ -688,11 +686,6 @@ $(function() {
       retstr = "right";
     else if ((pixel[0] - dims[0]) > 0)  // if the popover won't be too far to the left...
       retstr = "left";
-    console.log((pixel[1] + dims[1]), size[1]);
-    console.log((pixel[1] - dims[1]), size[1]);
-    console.log((pixel[0] + dims[0]), size[0]);
-    console.log((pixel[0] - dims[0]), size[0]);
-    console.log(retstr);
     return retstr;
   }
 
@@ -756,18 +749,18 @@ $(function() {
     editButton.innerText = "Edit Point";
     detailsButton.innerText = "View Details"
     editButton.classList.add("btn", "btn-primary", "custom-close", "popup-button");
-    editButton.style.marginLeft = "10px";
     editButton.addEventListener('click', function() {
       trans.setActive(true);
       $(popup.getElement()).popover('destroy');
     });
     detailsButton.classList.add("btn", "btn-primary", "custom-details", "popup-button")
     detailsButton.style.marginLeft = "10px";
-
+    
     const PDFButton = document.createElement("button");
     PDFButton.setAttribute("id", "pdf-btn-text");
     PDFButton.innerHTML = '<span class="glyphicon glyphicon-floppy-save"></span><span id="csv-btn-text" > Save .pdf</span>'
     PDFButton.classList.add("btn", "btn-primary", "custom-details", "popup-button")
+    PDFButton.style.marginLeft = "10px";
     detailsButton.addEventListener('click', function() {
       let detailURL = "/apps/ol-test/details/" + hylak_id + "/";
       window.open(detailURL, '_blank');
@@ -931,9 +924,9 @@ $(function() {
 
       // adding the buttons to the popup footer
       const fut = document.getElementsByClassName("popover-footer")[0];
-      if (editable) fut.append(editButton);
       fut.append(detailsButton);
       fut.append(PDFButton);
+      if (editable) fut.append(editButton);
 
       let span3 = document.createElement("span");
       span3.innerText = "PDF Zoom Level: ";
