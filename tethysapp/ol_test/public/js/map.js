@@ -700,7 +700,6 @@ $(function() {
     // i.e. a cluster, the dragbox
     if (feat) {
       selected_feature = feat;
-      editable = false;
     } else
       selected_feature = e.selected[0];
 
@@ -721,7 +720,6 @@ $(function() {
     // unholy amounts of setup for all the things edited here
     // setup for the graph button display
     var graph_button = document.getElementById("graph-num");
-    var graph_header = document.getElementById("graph-modal-label");
     var graph_body = document.getElementById("graph-modal-body");
     graph_button.innerHTML = " (1)";
     
@@ -776,6 +774,7 @@ $(function() {
     
     // selector if feature was picked from a selector
     if (IDList.length > 0) {
+      editable = false;
       // putting the values in the selector
       for (let i = 0; i < IDList.length; i++) {
         var opt = document.createElement("option");
