@@ -11,14 +11,18 @@
   <div class="header-button glyphicon-button" data-toggle="tooltip" data-placement="bottom" title="Help">
     <a data-toggle="modal" data-target="#help-modal"><span class="glyphicon glyph-black glyphicon-question-sign"></span></a>
   </div>
+  <div class="header-button glyphicon-button" data-toggle="tooltip" data-placement="bottom" title="Search By ID">
+    <a data-toggle="modal" data-target="#search-modal"><span class="glyphicon glyph-black glyphicon-search"></span></a>
+  </div>
+  
+  {% if request.user.is_staff %}
   <div class="header-button glyphicon-button" data-toggle="tooltip" data-placement="bottom" title="Save Points">
     <a data-toggle="modal" data-target="#save-modal"><span class="glyphicon glyph-black glyphicon-floppy-disk"></span><span class="button-text" id="save-num"> (0)</span></a>
   </div>
+  {% endif %}
+
   <div class="header-button glyphicon-button" data-toggle="tooltip" data-placement="bottom" title="View Selected Graph">
     <a data-toggle="modal" data-target="#graph-modal"><span class="glyphicon glyph-black glyphicon-stats"></span><span class="button-text" id="graph-num"> (0)</span></a>
-  </div>
-  <div class="header-button glyphicon-button" data-toggle="tooltip" data-placement="bottom" title="Search By ID">
-    <a data-toggle="modal" data-target="#search-modal"><span class="glyphicon glyph-black glyphicon-search"></span></a>
   </div>
 {% endblock %}
 
@@ -29,6 +33,10 @@
     
   </head>
   <body>
+    {% if request.user.is_staff %}
+      <div hidden id="staff_bool">1</div>
+    {% endif %}
+
     <div id="map" class="map"></div>
     <div id="popup"></div>
   </body>
@@ -56,11 +64,13 @@
           <p>
             Clicking on a point creates a popup with the point ID, the lake area of that point, a hydrograph for that point, and a few extra options. Clicking the <span class="glyphicon glyph-black glyphicon-stats"></span> button will also show the graph, as well as an option to disable the popups or view details. You may also select multiple points by clicking and dragging the mouse while holding Ctrl (⌘ on Mac). In this case, only one point will be selected at a time, starting with the point with the lowest ID, but in the top left corner of the popup, there will be a dropdown to select any other point in that selection.
           </p>
+          {% if request.user.is_staff %}
           <h5>Changing Point Coordinates</h5>
           <p>
             You are able to move each point around by selecting a point, clicking <b>Edit Point</b> if it appears, then clicking and dragging the point around. Changes are saved automatically. The <span class="glyphicon glyph-black glyphicon-floppy-disk"></span> button shows changes made since the start of the session. <br>
             Note: If <b>Edit Point</b> does not appear, you need to select the feature again in such a way that it is the only feature selected, i.e. there are no other features in the ID selector in the top left of the popup.
           </p>
+          {% endif %}
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-primary" data-dismiss="modal">Close</button>
@@ -68,6 +78,7 @@
       </div>
     </div>
   </div>
+  {% if request.user.is_staff %}
   <!-- Save Modal -->
   <div class="modal fade" id="save-modal" tabindex="-1" role="dialog" aria-labelledby="save-modal-label">
     <div class="modal-dialog" role="document">
@@ -86,6 +97,7 @@
       </div>
     </div>
   </div>
+  {% endif %}
   <!-- Graph Modal -->
   <div class="modal fade" id="graph-modal" tabindex="-1" role="dialog" aria-labelledby="graph-modal-label">
     <div class="modal-dialog modal-lg" role="document">

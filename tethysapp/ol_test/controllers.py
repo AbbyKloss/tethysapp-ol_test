@@ -1,5 +1,5 @@
 import json
-from .handlers import create_hydrograph, createCSV, createPDF
+from .handlers import create_hydrograph, createCSV, createExcel, createPDF
 from django.shortcuts import render
 from django.http import HttpResponse, JsonResponse, FileResponse
 from django.views.decorators.csrf import csrf_exempt, csrf_protect, ensure_csrf_cookie
@@ -218,6 +218,39 @@ def download_station_csv(request):
 
     return response
 
+def download_station_excel(request):
+    '''
+    Controller for client XLSX requests
+    Sends Client a spreadsheet based on passed Hylak_ID
+    '''
+    # Requires GET request, POST would be excessive
+    if (request.method != "GET"):
+        print(request.method)
+        return HttpResponse(status = 400)
+
+    # initializing data
+    get = request.GET.dict()
+    station_id = ""
+
+    # attempting to retrieve data
+    try:
+        station_id = get['hylak_id']
+    except (KeyError, ValueError) as e:
+        print(e)
+        return HttpResponse(status = 400)
+
+    # get excel data from original csv file
+    filename = "HydroLakes/HydroLakes_polys_v10_10km2_global_results_dswe.csv"
+    file = createExcel(station_id, filename)
+    file.seek(0) # reset the read head
+
+    # convert to something the webpage can read
+    data = base64.b64encode(file.read()).decode()
+
+    # send data
+    response = HttpResponse(data)
+    return response
+
 @csrf_protect
 def pdf_ajax(request):
     '''
@@ -253,6 +286,6 @@ def pdf_ajax(request):
 
     # Sending PDF to Client
     response = FileResponse(file)
-    response['Content-Disposition'] = f'attachment'
+    response['Content-Disposition'] = 'attachment'
     response['Content-Type'] = 'application/pdf'
     return response

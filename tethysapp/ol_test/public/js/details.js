@@ -402,6 +402,51 @@ $(function() {
 			})
     }
 
+    function downloadExcel() {
+        // change button text to be responsive
+        document.getElementById("excel-btn-text").innerText = " Loading..."
+			$.ajax({
+				url:'/apps/ol-test/download_station_xlsx/',
+				method: 'GET',
+                data: { "hylak_id": Hylak_id },
+                // headers: {"responseType": 'arraybuffer'},
+                responseType: 'arraybuffer',
+                // dataType: 
+				success: function (data) {
+                    // change button text again
+                    document.getElementById("excel-btn-text").innerText = " Done!"
+
+                    // all of this forces the browser to download the xlsx
+                    // it creates an element that you can click to download it, clicks it, then deletes it
+					let element = document.createElement('a');
+					let filename = Hylak_id + ".xlsx"
+
+                    // set up the element to contain the data and show nothing
+                    element.href = 'data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,' + data;
+                    element.download = filename;
+					element.style.display = 'none';
+
+                    // make it exist, activate it, then destroy it
+					document.body.appendChild(element);
+					element.click();
+					document.body.removeChild(element);
+
+                    setTimeout( function() {
+                        // reset the button text
+                        document.getElementById("excel-btn-text").innerText = " Save .xlsx"
+                    }, 1500);
+				},
+				error: function() {
+                    // change button text to be responsive
+                    document.getElementById("excel-btn-text").innerText = " Failed...";
+                    setTimeout( function() {
+                        // reset button text
+                        document.getElementById("excel-btn-text").innerText = " Save .xlsx";
+                    }, 1500);
+				}
+			})
+    }
+
     // makes the tab buttons work
     for (let i = 0; i < tablinks.length; i++) {
         tablinks[i].addEventListener('click', openTab);
@@ -503,6 +548,8 @@ $(function() {
                 fill: fillType,
                 fillcolor: fillColor,
                 line: {
+                    shape: 'spline',
+                    'smoothing': 0.75,
                     color: lineColor,
                     width: 4,
                 },
@@ -768,4 +815,5 @@ $(function() {
         }, 100);
     });
     document.getElementById("download-csv-btn").addEventListener('click', downloadCSV);
+    document.getElementById("download-excel-btn").addEventListener('click', downloadExcel);
 })

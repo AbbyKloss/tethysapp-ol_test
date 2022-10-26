@@ -264,6 +264,67 @@ def createCSV(hylakID: str, filename: str) -> str:
 
     return outputString
 
+def createExcel(hylakID: str, filename: str) -> BytesIO:
+    # Get data from csv file
+    file_path = "/Users/chluser/tethysdev/tethysapp-ol_test/tethysapp/ol_test/workspaces/app_workspace/files/" + filename
+    df = pd.read_csv(file_path, usecols=["Dates", hylakID])
+
+    # make all the dataframes needed to manipulate and present data
+    dayf = df.copy(deep=True)
+    monf = df.copy(deep=True)
+    yerf = df.copy(deep=True)
+
+    # set up the groupbys so the timeframes are correct
+    dayf["Dates"] = pd.to_datetime(df["Dates"], format="%Y-%m-%d").dt.strftime("%j")
+    gbd = dayf.groupby(["Dates"])
+    days = list(set(dayf["Dates"].to_list()))
+    days = sorted([datetime.strptime(dt, "%j") for dt in days])
+    days = [dt.strftime("%b-%d") for dt in days]
+
+    monf["Dates"] = pd.to_datetime(df["Dates"], format="%Y-%m-%d").dt.strftime("%m")
+    gbm = monf.groupby(["Dates"])
+    months = list(set(monf["Dates"].to_list()))
+    months = sorted([datetime.strptime(dt, "%m") for dt in months])
+    months = [dt.strftime("%b") for dt in months]
+
+    yerf["Dates"] = pd.to_datetime(df["Dates"], format="%Y-%m-%d").dt.strftime("%Y")
+    gby = yerf.groupby(["Dates"])
+    years = list(set(yerf["Dates"].to_list()))
+    years = sorted([datetime.strptime(dt, "%Y") for dt in years])
+    years = [dt.strftime("%Y") for dt in years]
+
+
+    outfile = BytesIO()
+    writer = pd.ExcelWriter(outfile, mode="w")
+    # form a new dataframe with the appropriate data, setting the index to the Dates column
+    # this process gets mirrored in the oncoming for loop
+    newdf = pd.DataFrame([df["Dates"].to_list(), df[hylakID].to_list()], index=["Dates", hylakID]).T.set_index("Dates")
+    newdf.to_excel(writer, sheet_name="Full")
+
+
+    # a loop through a list of all the groupbys
+    # programmatically adding all of them to the spreadsheet without necessarily
+    # keeping all of them in memory
+    gblist = [["Daily", gbd, days], ["Monthly", gbm, months], ["Yearly", gby, years]]
+    for item in gblist:
+        # Doing all the math
+        max = item[1].max()[hylakID].to_list()
+        posStdv = item[1].agg(lambda x: x.mean() + x.std())[hylakID].to_list()
+        mean = item[1].mean()[hylakID].to_list()
+        negStdv = item[1].agg(lambda x: x.mean() - x.std())[hylakID].to_list()
+        min = item[1].min()[hylakID].to_list()
+
+        # Organization
+        statList = [item[2], max, posStdv, mean, negStdv, min]
+        labels = ["Dates", "max", "+stdev", "mean", "-stdev", "min"]
+
+        # Writing to the spreadsheet
+        newdf = pd.DataFrame(statList, index=labels).T.set_index("Dates")
+        newdf.to_excel(writer, sheet_name=item[0])
+
+    writer.save()
+    return outfile
+
 def wordWrap(instr: str, maxLen: int) -> list:
     '''
     Splits the given string into a list of strings containing unbroken words with each string having a lower len than the given length.

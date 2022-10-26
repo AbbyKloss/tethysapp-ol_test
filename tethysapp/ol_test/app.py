@@ -73,6 +73,11 @@ class OlTest(TethysAppBase):
                 controller='ol_test.controllers.details'
             ),
             UrlMap(
+                name="download_station_xlsx",
+                url='ol-test/download_station_xlsx/',
+                controller='ol_test.controllers.download_station_excel'
+            ),
+            UrlMap(
                 name="download_station_csv",
                 url='ol-test/download_station_csv/',
                 controller='ol_test.controllers.download_station_csv'

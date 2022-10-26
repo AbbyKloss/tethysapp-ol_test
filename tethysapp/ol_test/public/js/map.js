@@ -79,6 +79,20 @@ $(function() {
   const xcsrftoken = document.getElementsByName("csrfmiddlewaretoken")[0].value;
   $("input[name='csrfmiddlewaretoken']").remove();
 
+  var staff_bool = false;
+  if (document.getElementById("staff_bool") !== null) {
+    staff_bool = document.getElementById("staff_bool").innerText;
+    $("#staff_bool").remove();
+    if (staff_bool == 1)
+      staff_bool = true
+
+    if (staff_bool)
+      console.log("Staff Bool")
+    else
+      console.log("Nones Bool")
+  }
+
+
   document.title = "OL Test | Map";
 
   // input mechanisms at the bottom of the screen, from right to left
@@ -694,7 +708,7 @@ $(function() {
     trans.setActive(false);
 
 
-    let editable = true;
+    let editable = staff_bool;
     // if a feature is passed, use that
     // generally multiple things are selected in this case
     // i.e. a cluster, the dragbox

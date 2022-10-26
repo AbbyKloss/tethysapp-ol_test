@@ -108,16 +108,24 @@
         <div id="data-download-content" class="tabcontent download-content">
             <div class="row">
                 <div class="column col1">
-                    <h3>Download Options:</h3>
-                    <button class="btn btn-info btn-download" id="download-pdf-btn">
-                        <span class="glyphicon glyph-black glyphicon-floppy-save"></span><span id="pdf-btn-text" class="button-text"> Save .pdf</span>
-                    </button>
-                    <button class="btn btn-info btn-download" id="download-csv-btn">
-                        <span class="glyphicon glyph-black glyphicon-floppy-save"></span><span id="csv-btn-text" class="button-text"> Save .csv</span>
-                    </button>
+                    <h3>Download Options:</h3><br>
+                    <div id="button-holder">
+                        <button class="btn btn-info btn-download" id="download-pdf-btn">
+                            <span class="glyphicon glyph-black glyphicon-floppy-save"></span><span id="pdf-btn-text" class="button-text"> Save .pdf</span>
+                        </button>
+                        <button class="btn btn-info btn-download" id="download-csv-btn">
+                            <span class="glyphicon glyph-black glyphicon-floppy-save"></span><span id="csv-btn-text" class="button-text"> Save .csv</span>
+                        </button>
+                        <button class="btn btn-info btn-download" id="download-excel-btn">
+                            <span class="glyphicon glyph-black glyphicon-floppy-save"></span><span id="excel-btn-text" class="button-text"> Save .xlsx</span>
+                        </button>
+                    </div>
+                    {% comment %} <br> {% endcomment %}
+                    <br>
+                    <p>Note: the main difference between .csv and .xlsx is the .xlsx has more statistical information (i.e. stdev, mean, bounds)</p>
                 </div>
                 <div class="column col2">
-                    <h3>PDF Options:</h3>
+                    <h3>PDF Options:</h3><br>
                     <span>PDF Zoom Level: </span>
                     <select id="zoom-selector"> <!--- [["Closest", 13], ["Close", 12], ["Midrange", 10], ["Far", 8.4], ["Farthest", 7]] -->
                         <option value="13">Closest</option>

@@ -1,3 +1,7 @@
+head, body {
+    font-size: 2em;
+}
+  
 .table-content {
     overflow-x: auto;
     font-family: arial, sans-serif;
@@ -50,16 +54,36 @@ tr:nth-child(even) {
 }
 
 .column {
-  float: left;
-  width: 25%;
+    float: left;
+    width: 35%;
 }
 
 .col1 {
-  text-align: center;
+    margin-right: 20px;
+}
+
+#button-holder {
+    margin-left:1em;
+}
+
+.column h3 {
+    text-align: left;
+    font-size: 1.5em;
+}
+
+.column p {
+    text-align: left;
+    margin-left: 2em;
+    text-indent: -2em;
+    font-size: 1em;
 }
 
 .col2 {
-  padding-left: 1%;
+padding-left: 1%;
+}
+
+.col2 span {
+margin-left: 1em;
 }
 
 .row {
