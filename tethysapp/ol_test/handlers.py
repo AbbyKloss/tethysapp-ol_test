@@ -1,24 +1,23 @@
 # import csv
-import pandas as pd
-import numpy as np
-from plotly import graph_objs as go
 from datetime import datetime
-from tethys_gizmos.gizmo_options import PlotlyView
 from io import BytesIO
-from reportlab.pdfgen import canvas
-from reportlab.lib.pagesizes import letter
-from reportlab.lib.utils import ImageReader
-from reportlab.lib.units import inch
+from functools import lru_cache
+
+import numpy as np
+import pandas as pd
 from PIL import Image, ImageColor
+from plotly import graph_objs as go
+from reportlab.lib.pagesizes import letter
+from reportlab.lib.units import inch
+from reportlab.lib.utils import ImageReader
+from reportlab.pdfgen import canvas
+from tethys_gizmos.gizmo_options import PlotlyView
+
 from .app import OlTest as app
 from .helpers import get_workspace
-from .model import Station
+from .model import Station\
 
-# an attempt to somewhat speed up the details page and creation of pdfs
-# saves 4-5s per pdf when used well
-glob_HID = 0
-glob_df = None
-
+@lru_cache()
 def create_hydrograph(hylakID: str, filename: str, timespan="total", heightIn='520', widthIn='100%', mode=0, graphScale = 5.25): # -> PlotlyView, list[list], BytesIO:
     """
     Generates hydrographs based on the mode variable.
@@ -52,19 +51,10 @@ def create_hydrograph(hylakID: str, filename: str, timespan="total", heightIn='5
 
     # making sure variables are fine
     timespan = timespan.lower()
-    hylakID = str(hylakID)
 
-    global glob_HID
-    global glob_df
-
-    # get CSV or dataframe already in memory
-    if (hylakID != glob_HID):
-        glob_HID = hylakID
-        file_path = get_workspace() + "/files/" + filename
-        df = pd.read_csv(file_path, usecols=["Dates", hylakID])
-        glob_df = df.copy()
-    else:
-        df = glob_df.copy()
+    file_path = get_workspace() + "/files/" + filename
+    cols = ["Dates", hylakID]
+    df = pd.read_csv(file_path, usecols=cols)
     
     # prepare it for processing
     # any and all processing that may need to be done
@@ -226,6 +216,7 @@ def create_hydrograph(hylakID: str, filename: str, timespan="total", heightIn='5
         'xaxis': {'title': 'Time (date)'},
         'yaxis': {'title': 'Surface Area (km²)'},
         'height': int(heightIn),
+        'hovermode': 'x unified',
     }
 
     # create the figure for modes 1 and 2
@@ -367,7 +358,7 @@ def wordWrap(instr: str, maxLen: int) -> list:
         BigList = [strA]
     return BigList
 
-def createPDF (hylak_id: int, img: BytesIO) -> BytesIO:
+def createPDF (hylak_id: int, img: "BytesIO | None") -> BytesIO:
     # making sure input is fine
     hylak_id = int(hylak_id)
     filename = "HydroLakes/HydroLakes_polys_v10_10km2_global_results_dswe.csv"
@@ -464,28 +455,28 @@ def createPDF (hylak_id: int, img: BytesIO) -> BytesIO:
 
     cursorY = (curCursor + (graphScale * inch)) // 2
 
-
-    img.seek(0)
-    test = BytesIO(img.read())
-    imag = Image.open(test, formats=['png'])
-    idealsiz = int(inch * graphScale)
-    imwidth, imheight = imag.size
-    if (imwidth != idealsiz and imheight != idealsiz):
-        imag = imag.resize((idealsiz, idealsiz))
-    # draw OSM location
-    if (cursorY > (graphScale * inch) + 10):
-        cursorY -= graphScale*inch - 10
-    else:
-        canv.showPage()
-        cursorY = height - ((graphScale*inch) + 20)
-    cursorX = (width - (graphScale * inch)) // 2
-    canv.drawImage(ImageReader(imag), cursorX, cursorY, width=graphScale*inch, height=graphScale*inch)
+    if (img != None):
+        img.seek(0)
+        test = BytesIO(img.read())
+        imag = Image.open(test, formats=['png'])
+        idealsiz = int(inch * graphScale)
+        imwidth, imheight = imag.size
+        if (imwidth != idealsiz and imheight != idealsiz):
+            imag = imag.resize((idealsiz, idealsiz))
+        # draw OSM location
+        if (cursorY > (graphScale * inch) + 10):
+            cursorY -= graphScale*inch - 10
+        else:
+            canv.showPage()
+            cursorY = height - ((graphScale*inch) + 20)
+        cursorX = (width - (graphScale * inch)) // 2
+        canv.drawImage(ImageReader(imag), cursorX, cursorY, width=graphScale*inch, height=graphScale*inch)
 
     # draw all graphs
     cursorX = (width - (8 * inch))//2
     timespans = ["total", "yearly", "monthly", "daily"]
     for span in timespans:
-        img = create_hydrograph(hylakID=hylak_id, filename=filename, timespan=span, graphScale=graphScale, mode=2)
+        img = create_hydrograph(hylakID=str(hylak_id), filename=filename, timespan=span, graphScale=graphScale, mode=2)
         imag = Image.open(img)
         if (cursorY > (graphScale * inch) + 10):
             cursorY -= graphScale*inch - 10

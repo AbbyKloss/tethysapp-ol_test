@@ -1,6 +1,8 @@
-from tethys_sdk.base import TethysAppBase, url_map_maker
-from tethys_sdk.app_settings import PersistentStoreDatabaseSetting
 from random import randint
+
+from tethys_sdk.app_settings import PersistentStoreDatabaseSetting
+from tethys_sdk.base import TethysAppBase, url_map_maker
+
 
 # i await the day tethys moves to python 3.10+ so i can use a match case statement here
 def randColor(static=0) -> str:

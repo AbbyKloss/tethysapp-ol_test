@@ -711,6 +711,7 @@ $(function() {
                     tickangle: 15,
                     dtick: "M12",
                 },
+                hovermode: "x unified",
             };
             Plotly.newPlot('graph-full-plot', processGraphData(data['data']), layout, config);
             $("#full-loader").hide();
@@ -735,6 +736,7 @@ $(function() {
                 title: `Yearly Surface Area for ${Hylak_id}`,
                 xaxis:  {'title': 'Time (date)'},
                 yaxis:  {'title': 'Surface Area (km²)'},
+                hovermode: "x unified",
             };
             Plotly.newPlot('graph-yearly-plot', processGraphData(data['data']), layout, config);
             $("#yearly-loader").hide();
@@ -764,6 +766,7 @@ $(function() {
                 xaxis: {
                     tickformat: '%b'
                 },
+                hovermode: "x unified",
             };
             Plotly.newPlot('graph-monthly-plot', processGraphData(data['data']), layout, config);
             $("#monthly-loader").hide();
@@ -792,7 +795,8 @@ $(function() {
                 yaxis:  {'title': 'Surface Area (km²)'},
                 xaxis: {
                     tickformat: '%b-%d'
-                }
+                },
+                hovermode: "x unified",
             };
             Plotly.newPlot('graph-daily-plot', processGraphData(data['data']), layout, config);
             $("#daily-loader").hide();

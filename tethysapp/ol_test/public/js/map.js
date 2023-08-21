@@ -187,6 +187,10 @@ $(function() {
     style: dynamicStyle,
   });
 
+  var lakePolys = new ol.layer.Vector({
+    source: null
+  })
+
   // taken from the OpenLayers cluster example
   // https://openlayers.org/en/v4.6.5/examples/cluster.html?q=cluster
   var styleCache = {};
@@ -383,7 +387,7 @@ $(function() {
   });
 
   var map2 = new ol.Map({
-    layers: [baseLayer, vector2],
+    layers: [baseLayer, lakePolys, vector2],
     target: 'map2',
     view: new ol.View({
         center: ol.proj.fromLonLat([0, 0]),
@@ -478,11 +482,15 @@ $(function() {
     })
     
     // initialize all the things that need this data (many things)
+    console.log(minarea)
+    console.log(maxarea)
+    
     maxarea = Math.ceil(maxarea);
     minarea = Math.floor(minarea);
     searchNumber.min = minID;
     searchNumber.max = maxID;
     searchNumber.value = minID;
+
 
     number.step = 1;
     number.min = minarea;

@@ -1,13 +1,18 @@
-import json
-from .handlers import create_hydrograph, createCSV, createExcel, createPDF
-from django.shortcuts import render
-from django.http import HttpResponse, JsonResponse, FileResponse
-from django.views.decorators.csrf import csrf_exempt, csrf_protect, ensure_csrf_cookie
-from tethys_sdk.permissions import login_required
-from .model import Station, get_all_stations
-from .app import OlTest as app
 import base64
+import json
 from io import BytesIO
+
+from django.http import FileResponse, HttpResponse, JsonResponse
+from django.shortcuts import render
+from django.views.decorators.csrf import csrf_exempt, csrf_protect, ensure_csrf_cookie
+from django.views.decorators.cache import never_cache
+from tethys_sdk.permissions import login_required
+
+from .app import OlTest as app
+from .handlers import create_hydrograph, createCSV, createExcel, createPDF
+from .model import Station, get_all_stations
+
+glob_filename = "HydroLakes/HydroLakes_polys_v10_10km2_global_results_dswe.csv"
 
 @login_required()
 def home(request):
@@ -97,7 +102,9 @@ def hydrograph_ajax(request):
         return HttpResponse(status = 400)
 
     # create graphs
-    filename = "HydroLakes/HydroLakes_polys_v10_10km2_global_results_dswe.csv"
+    # filename = "HydroLakes/HydroLakes_polys_v10_10km2_global_results_dswe.csv"
+    global glob_filename
+    filename = glob_filename
     traces = create_hydrograph(station_id, filename, timespan=timespan, heightIn=height, mode=mode)
 
 
@@ -209,7 +216,9 @@ def download_station_csv(request):
         return HttpResponse(status = 400)
     
     # get csv data from original csv file
-    filename = "HydroLakes/HydroLakes_polys_v10_10km2_global_results_dswe.csv"
+    # filename = "HydroLakes/HydroLakes_polys_v10_10km2_global_results_dswe.csv"
+    global glob_filename
+    filename = glob_filename
     file_data = createCSV(station_id, filename)
 
     # package the csv and return it
@@ -240,7 +249,9 @@ def download_station_excel(request):
         return HttpResponse(status = 400)
 
     # get excel data from original csv file
-    filename = "HydroLakes/HydroLakes_polys_v10_10km2_global_results_dswe.csv"
+    # filename = "HydroLakes/HydroLakes_polys_v10_10km2_global_results_dswe.csv"
+    global glob_filename
+    filename = glob_filename
     file = createExcel(station_id, filename)
     file.seek(0) # reset the read head
 
@@ -274,11 +285,13 @@ def pdf_ajax(request):
         return HttpResponse(status = 400)    
 
     # converting the image data passed from the client into a useable image file in memory
-    img_data = post['map_blob']
-    img_data = base64.b64decode(img_data)
-    img = BytesIO()
-    img.write(img_data)
-    img.seek(0)
+    img = None
+    if ('map_blob' in post.keys()):
+        img_data = post['map_blob']
+        img_data = base64.b64decode(img_data)
+        img = BytesIO()
+        img.write(img_data)
+        img.seek(0)
 
     # Creating PDF
     file = createPDF(station_id, img)

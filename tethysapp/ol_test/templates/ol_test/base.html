@@ -43,7 +43,7 @@
   {{ block.super }}
   <link href="{% static 'ol_test/css/OL.css' %}" rel="stylesheet"/>
   <link href="{% static 'ol_test/css/main.css' %}" rel="stylesheet"/>
-  <link href="{% static 'ol_test/css/map.css' %}" rel="stylesheet"/>
+  {% comment %} <link href="{% static 'ol_test/css/map.css' %}" rel="stylesheet"/> {% endcomment %}
 {% endblock %}
 
 {% block scripts %}

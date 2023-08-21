@@ -16,7 +16,8 @@ requirements:
     plotly,    # for data visualization
     kaleido,   # "                    "
     reportlab, # "                    "
-    PIL,       # "                    "
+    Pillow,    # "                    "
+    openpyxl,  # "                    "
     ]
 
 post:

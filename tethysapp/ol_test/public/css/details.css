@@ -99,9 +99,14 @@ margin-left: 1em;
 
 #inner-app-content {
     overflow: hidden;
+    padding: 0;
 }
 
 #map {
     width: 378px;
     height: 378px;
+}
+
+#app-content {
+    height: 100%;
 }
